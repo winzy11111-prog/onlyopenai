@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PetabyteAi — AI Assistant</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f0f0;
+            color: #1a1a1a;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ─── Sidebar ─── */
+        .sidebar {
+            width: 220px;
+            min-width: 220px;
+            background: #e4e4e4;
+            display: flex;
+            flex-direction: column;
+            padding: 12px 8px;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 6px 8px 12px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .brand-avatar {
+            width: 32px;
+            height: 32px;
+            background: #2a2a2a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .brand-project {
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: #1a1a1a;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* New Chat button */
+        .new-chat-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            margin: 0 0 8px 0;
+            border-radius: 8px;
+            border: 1.5px solid rgba(0, 0, 0, 0.12);
+            background: white;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: #333;
+            transition: all 0.12s;
+            width: 100%;
+        }
+
+        .new-chat-btn:hover {
+            background: #f5f5f5;
+            border-color: #bbb;
+        }
+
+        .new-chat-btn svg {
+            flex-shrink: 0;
+            color: #666;
+        }
+
+        /* Session list */
+        .history-label {
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            padding: 0 8px;
+            margin-bottom: 4px;
+        }
+
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            padding-bottom: 4px;
+        }
+
+        .history-list::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .history-list::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 10px;
+        }
+
+        /* Date group header */
+        .date-group-label {
+            font-size: 0.66rem;
+            font-weight: 600;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 8px 10px 3px;
+        }
+
+        /* Session item */
+        .session-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 8px;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: background 0.12s;
+            position: relative;
+        }
+
+        .session-item:hover {
+            background: rgba(0, 0, 0, 0.07);
+        }
+
+        .session-item.active {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .session-item.active .session-title {
+            color: #1a1a1a;
+            font-weight: 500;
+        }
+
+        .session-emoji {
+            font-size: 0.85rem;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+
+        .session-title {
+            flex: 1;
+            font-size: 0.79rem;
+            color: #555;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.4;
+        }
+
+        .session-del {
+            display: none;
+            background: none;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 1.1rem;
+            line-height: 1;
+            padding: 2px 3px;
+            border-radius: 4px;
+            flex-shrink: 0;
+            transition: color 0.1s;
+        }
+
+        .session-del:hover {
+            color: #e53e3e;
+        }
+
+        .session-item:hover .session-del {
+            display: flex;
+        }
+
+        .history-empty {
+            padding: 8px 10px;
+            font-size: 0.78rem;
+            color: #bbb;
+            font-style: italic;
+        }
+
+        /* Balance card */
+        .sidebar-bottom {
+            padding-top: 10px;
+            border-top: 1px solid rgba(0, 0, 0, 0.08);
+            margin-top: 6px;
+        }
+
+        .balance-card {
+            background: white;
+            border-radius: 10px;
+            padding: 10px 12px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        .balance-label {
+            font-size: 0.68rem;
+            color: #999;
+            margin-bottom: 2px;
+        }
+
+        .balance-amount {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .balance-project {
+            font-size: 0.68rem;
+            color: #bbb;
+            margin-top: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ─── Main ─── */
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            min-width: 0;
+        }
+
+        /* Topbar */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            border-bottom: 1px solid #f0f0f0;
+            flex-shrink: 0;
+        }
+
+        .skill-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            transition: background 0.12s;
+            border: none;
+            background: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .skill-title:hover {
+            background: #f5f5f5;
+        }
+
+        .skill-title svg {
+            color: #aaa;
+            flex-shrink: 0;
+        }
+
+        .user-area {
+            position: relative;
+        }
+
+        .user-menu-btn {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 8px;
+            transition: background 0.12s;
+            border: none;
+            background: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .user-menu-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .user-name {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .user-avatar {
+            width: 30px;
+            height: 30px;
+            background: #2a2a2a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.78rem;
+            flex-shrink: 0;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            background: white;
+            border: 1px solid #e8e8e8;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            min-width: 170px;
+            z-index: 100;
+            overflow: hidden;
+            display: none;
+        }
+
+        .dropdown-menu.open {
+            display: block;
+        }
+
+        .dropdown-item {
+            display: block;
+            width: 100%;
+            padding: 10px 16px;
+            text-align: left;
+            background: none;
+            border: none;
+            border-bottom: 1px solid #f5f5f5;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: #333;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background: #f7f7f7;
+        }
+
+        .dropdown-item.danger {
+            color: #e53e3e;
+        }
+
+        .dropdown-item.danger:hover {
+            background: #fff5f5;
+        }
+
+        /* Chat area */
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 22px 26px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .chat-area::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .chat-area::-webkit-scrollbar-thumb {
+            background: #ddd;
+            border-radius: 10px;
+        }
+
+        .chat-empty {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: #ccc;
+            text-align: center;
+        }
+
+        .chat-empty-icon {
+            font-size: 2.5rem;
+        }
+
+        .chat-empty-title {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #bbb;
+        }
+
+        .chat-empty-sub {
+            font-size: 0.8rem;
+            color: #ccc;
+        }
+
+        .chat-msg {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            max-width: 82%;
+        }
+
+        .chat-msg.user {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .chat-msg.assistant {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .msg-bubble {
+            padding: 11px 15px;
+            border-radius: 14px;
+            font-size: 0.875rem;
+            line-height: 1.65;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+
+        .chat-msg.user .msg-bubble {
+            background: #2a2a2a;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-msg.assistant .msg-bubble {
+            background: #f5f5f5;
+            color: #1a1a1a;
+            border-bottom-left-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .cost-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            padding: 3px 10px;
+            font-size: 0.68rem;
+            color: #999;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 15px;
+            background: #f5f5f5;
+            border-radius: 14px;
+            border-bottom-left-radius: 4px;
+            width: fit-content;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #bbb;
+            border-radius: 50%;
+            animation: bounce 1.2s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-5px);
+            }
+        }
+
+        /* Input area */
+        .input-area {
+            padding: 10px 24px 16px;
+            border-top: 1px solid #f0f0f0;
+            flex-shrink: 0;
+        }
+
+        .input-top {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .file-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 13px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 20px;
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.78rem;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.12s;
+        }
+
+        .file-btn:hover {
+            border-color: #aaa;
+            color: #333;
+        }
+
+        .attached-file {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            color: #555;
+        }
+
+        .attached-file button {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            font-size: 1rem;
+            line-height: 1;
+            padding: 0 0 0 2px;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            background: #f7f7f7;
+            border: 1.5px solid #e8e8e8;
+            border-radius: 14px;
+            padding: 10px 14px;
+            transition: border-color 0.15s, background 0.15s;
+        }
+
+        .input-row:focus-within {
+            border-color: #aaa;
+            background: white;
+        }
+
+        .chat-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            color: #1a1a1a;
+            outline: none;
+            resize: none;
+            min-height: 22px;
+            max-height: 120px;
+            line-height: 1.5;
+        }
+
+        .chat-input::placeholder {
+            color: #bbb;
+        }
+
+        .send-btn {
+            width: 32px;
+            height: 32px;
+            background: #2a2a2a;
+            border: none;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover {
+            background: #444;
+        }
+
+        .send-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Skill picker overlay */
+        .overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.18);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .overlay.open {
+            display: flex;
+        }
+
+        .skill-picker {
+            background: white;
+            border-radius: 14px;
+            padding: 22px;
+            width: 540px;
+            max-height: 72vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.14);
+        }
+
+        .skill-picker-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 14px;
+            color: #1a1a1a;
+        }
+
+        .skill-picker-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 9px;
+        }
+
+        .skill-picker-item {
+            padding: 11px 13px;
+            border: 1.5px solid #e8e8e8;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.12s;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .skill-picker-item:hover {
+            border-color: #aaa;
+            background: #fafafa;
+        }
+
+        .skill-picker-item.active {
+            border-color: #2a2a2a;
+            background: #f5f5f5;
+        }
+
+        .skill-emoji {
+            font-size: 1.15rem;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .skill-info-name {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .skill-info-desc {
+            font-size: 0.72rem;
+            color: #999;
+            margin-top: 2px;
+            line-height: 1.4;
+        }
+
+        /* Modals */
+        .modal {
+            background: white;
+            border-radius: 14px;
+            padding: 26px;
+            width: 420px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.14);
+        }
+
+        .modal-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 18px;
+            color: #1a1a1a;
+        }
+
+        .usage-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+
+        .usage-card {
+            background: #f5f5f5;
+            border-radius: 9px;
+            padding: 13px;
+        }
+
+        .usage-card-label {
+            font-size: 0.7rem;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        .usage-card-value {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1.5px solid #e8e8e8;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            color: #1a1a1a;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .form-input:focus {
+            border-color: #2a2a2a;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 10px;
+            background: #2a2a2a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+            margin-bottom: 8px;
+        }
+
+        .btn-primary:hover {
+            background: #444;
+        }
+
+        .btn-secondary {
+            width: 100%;
+            padding: 10px;
+            background: #f0f0f0;
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .btn-secondary:hover {
+            background: #e4e4e4;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 22px;
+            right: 22px;
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .toast {
+            padding: 9px 15px;
+            border-radius: 9px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            box-shadow: 0 3px 14px rgba(0, 0, 0, 0.1);
+            background: #2a2a2a;
+            color: white;
+            transition: opacity 0.3s;
+        }
+
+        .toast.error {
+            background: #ef4444;
+        }
+
+        .toast.success {
+            background: #22c55e;
+        }
+    </style>
+</head>
+
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-avatar" id="brand-avatar">P</div>
+            <div class="brand-project" id="brand-project">PetabyteAi</div>
+        </div>
+
+        <button class="new-chat-btn" onclick="newChat()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            New Chat
+        </button>
+
+        <div class="history-label">Chat History</div>
+        <div class="history-list" id="history-list">
+            <div class="history-empty">ยังไม่มีประวัติ</div>
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="balance-card">
+                <div class="balance-label">เครดิตคงเหลือ</div>
+                <div class="balance-amount" id="sidebar-balance">฿—</div>
+                <div class="balance-project" id="sidebar-project-label">—</div>
+            </div>
+        </div>
+    </aside>
+
+    <div class="main">
+        <div class="topbar">
+            <div class="skill-title" style="cursor:default;pointer-events:none;user-select:none">
+                <span id="current-skill-name">🧠 PetabyteAi</span>
+            </div>
+            <div class="user-area" id="user-area">
+                <button class="user-menu-btn" onclick="toggleUserMenu()">
+                    <span class="user-name" id="user-display-name">User</span>
+                    <div class="user-avatar" id="user-avatar">U</div>
+                </button>
+                <div class="dropdown-menu" id="user-dropdown">
+                    <button class="dropdown-item" onclick="openUsage()">Usage</button>
+                    <button class="dropdown-item" onclick="openChangePassword()">Change Password</button>
+                    <button class="dropdown-item danger" onclick="Auth.logout()">Log out</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-area" id="chat-area">
+            <div class="chat-empty" id="chat-empty">
+                <div class="chat-empty-icon">🤖</div>
+                <div class="chat-empty-title">พิมพ์คำถามหรือวาง ABAP code ได้เลย</div>
+                <div class="chat-empty-sub">PetabyteAi จะวิเคราะห์และตอบโดยอัตโนมัติ</div>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <div class="input-top">
+                <button class="file-btn" onclick="document.getElementById('file-input').click()">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path
+                            d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+                    </svg>
+                    Choose Files (.txt)
+                </button>
+                <div id="attached-file-display"></div>
+            </div>
+            <input type="file" id="file-input" accept=".txt" style="display:none" onchange="handleFileSelect(event)" />
+            <div class="input-row">
+                <textarea class="chat-input" id="chat-input" placeholder="Enter your question" rows="1"
+                    onkeydown="handleInputKey(event)" oninput="autoResize(this)"></textarea>
+                <button class="send-btn" id="send-btn" onclick="sendMessage()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                        <line x1="22" y1="2" x2="11" y2="13" />
+                        <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skill Picker -->
+    <div class="overlay" id="skill-picker-overlay" style="display:none"
+        onclick="overlayClick(event,'skill-picker-overlay')">
+        <div class="skill-picker">
+            <div class="skill-picker-title">PetabyteAi</div>
+            <div class="skill-picker-grid" id="skill-picker-grid"></div>
+        </div>
+    </div>
+
+    <!-- Usage Modal -->
+    <div class="overlay" id="usage-modal" onclick="overlayClick(event,'usage-modal')">
+        <div class="modal">
+            <div class="modal-title">Usage Summary</div>
+            <div class="usage-grid">
+                <div class="usage-card">
+                    <div class="usage-card-label">เครดิตคงเหลือ</div>
+                    <div class="usage-card-value" id="usage-balance">฿—</div>
+                </div>
+                <div class="usage-card">
+                    <div class="usage-card-label">Requests ทั้งหมด</div>
+                    <div class="usage-card-value" id="usage-requests">0</div>
+                </div>
+                <div class="usage-card">
+                    <div class="usage-card-label">Tokens ทั้งหมด</div>
+                    <div class="usage-card-value" id="usage-tokens">0</div>
+                </div>
+                <div class="usage-card">
+                    <div class="usage-card-label">ค่าใช้จ่ายทั้งหมด</div>
+                    <div class="usage-card-value" id="usage-cost">฿0.00</div>
+                </div>
+            </div>
+            <button class="btn-secondary" onclick="closeOverlay('usage-modal')">ปิด</button>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="overlay" id="password-modal" onclick="overlayClick(event,'password-modal')">
+        <div class="modal">
+            <div class="modal-title">Change Password</div>
+            <div class="form-group"><label class="form-label">Password ใหม่</label><input class="form-input"
+                    type="password" id="new-password" placeholder="กรอก password ใหม่..." /></div>
+            <div class="form-group"><label class="form-label">ยืนยัน Password</label><input class="form-input"
+                    type="password" id="confirm-password" placeholder="กรอกซ้ำ..." /></div>
+            <button class="btn-primary" onclick="changePassword()">บันทึก</button>
+            <button class="btn-secondary" onclick="closeOverlay('password-modal')">ยกเลิก</button>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/pricing.js"></script>
+    <script src="js/mock-ai.js"></script>
+    <script src="js/ai-client.js"></script>
+    <script>
+        // ══════════════════════════════════════════════════════════
+        // STATE
+        // ══════════════════════════════════════════════════════════
+        const State = {
+            selectedSkill: 'auto',
+            isRunning: false,
+            balance: 100,
+            usageHistory: [],       // for Usage modal
+            sessions: [],           // sidebar session list
+            currentSessionId: null, // active session
+            currentMessages: [],    // messages in current chat
+            attachedFile: null,
+
+            load() {
+                const s = Auth.getSession(); if (!s) return;
+                this.balance = parseFloat(localStorage.getItem('agenthub_balance_' + s.username) || '100');
+                try { this.usageHistory = JSON.parse(localStorage.getItem('agenthub_history_' + s.username) || '[]'); } catch { this.usageHistory = []; }
+            },
+            save() {
+                const s = Auth.getSession(); if (!s) return;
+                localStorage.setItem('agenthub_balance_' + s.username, this.balance.toString());
+                localStorage.setItem('agenthub_history_' + s.username, JSON.stringify(this.usageHistory));
+                localStorage.setItem('agenthub_balance', this.balance.toString());
+            },
+            addUsageEntry(entry) {
+                entry.id = Date.now(); entry.timestamp = new Date().toISOString();
+                this.usageHistory.unshift(entry);
+                if (this.usageHistory.length > 200) this.usageHistory = this.usageHistory.slice(0, 200);
+                this.balance = Math.max(0, this.balance - (entry.cost || 0)); this.save();
+                const s = Auth.getSession();
+                if (s && s.userId) {
+                    fetch('http://localhost:3001/api/history', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            userId: s.userId, skillId: entry.skillId, skillName: entry.skillName,
+                            skillEmoji: entry.skillEmoji, prompt: entry.prompt, response: entry.response,
+                            inputTokens: entry.inputTokens, outputTokens: entry.outputTokens, cost: entry.cost, durationMs: entry.durationMs
+                        })
+                    }).catch(() => { });
+                }
+            },
+        };
+
+        // ══════════════════════════════════════════════════════════
+        // SESSION API HELPERS
+        // ══════════════════════════════════════════════════════════
+        const BASE = 'http://localhost:3001';
+
+        async function apiLoadSessions(userId) {
+            try {
+                const d = await fetch(BASE + '/api/sessions?userId=' + userId).then(r => r.json());
+                if (d.ok) { State.sessions = d.sessions; renderSessionList(); }
+            } catch { }
+        }
+
+        async function apiGetSession(sessionId) {
+            try {
+                const d = await fetch(BASE + '/api/sessions/' + sessionId).then(r => r.json());
+                if (d.ok) return d.session;
+            } catch { }
+            return null;
+        }
+
+        async function apiCreateSession(userId, title, skillId, skillName, skillEmoji, messages) {
+            try {
+                const d = await fetch(BASE + '/api/sessions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, title, skillId, skillName, skillEmoji, messages })
+                }).then(r => r.json());
+                if (d.ok) return d.id;
+            } catch { }
+            return null;
+        }
+
+        async function apiUpdateSession(sessionId, messages) {
+            try {
+                await fetch(BASE + '/api/sessions/' + sessionId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ messages })
+                });
+            } catch { }
+        }
+
+        async function apiDeleteSession(sessionId) {
+            try {
+                await fetch(BASE + '/api/sessions/' + sessionId, { method: 'DELETE' });
+            } catch { }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // INIT
+        // ══════════════════════════════════════════════════════════
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!Auth.check('user')) return;
+            const session = Auth.getSession();
+            State.load();
+            const displayName = session.displayName || session.username;
+            document.getElementById('user-display-name').textContent = displayName;
+            document.getElementById('user-avatar').textContent = displayName.charAt(0).toUpperCase();
+
+            // Load balance from server
+            if (session.userId) {
+                try {
+                    const d = await fetch(BASE + '/api/users').then(r => r.json());
+                    if (d.ok) { const u = d.users.find(u => u.id === session.userId); if (u) { State.balance = parseFloat(u.balance); State.save(); } }
+                } catch { }
+
+                // Load usage history for stats
+                try {
+                    const d = await fetch(BASE + '/api/history?userId=' + session.userId).then(r => r.json());
+                    if (d.ok && d.history.length > 0) {
+                        State.usageHistory = d.history.map(h => ({
+                            id: h.id, skillId: h.skill_id, skillName: h.skill_name, skillEmoji: h.skill_emoji,
+                            prompt: h.prompt, response: h.response, inputTokens: h.input_tokens, outputTokens: h.output_tokens,
+                            cost: parseFloat(h.cost), durationMs: h.duration_ms, timestamp: h.created_at
+                        }));
+                        State.save();
+                    }
+                } catch { }
+
+                // Load chat sessions for sidebar
+                await apiLoadSessions(session.userId);
+            }
+
+            // Load project name
+            const projectId = session.projectId;
+            if (projectId) {
+                let projName = null;
+                try {
+                    const d = await fetch(BASE + '/api/projects').then(r => r.json());
+                    if (d.ok) { const p = d.projects.find(p => String(p.id) === String(projectId)); if (p) projName = p.name; }
+                } catch {
+                    const projs = JSON.parse(localStorage.getItem('agenthub_projects') || '[]');
+                    const p = projs.find(p => p.id === projectId); if (p) projName = p.name;
+                }
+                if (projName) {
+                    document.getElementById('brand-project').textContent = projName;
+                    document.getElementById('brand-avatar').textContent = projName.charAt(0).toUpperCase();
+                    document.getElementById('sidebar-project-label').textContent = projName;
+                }
+            }
+
+            if (PRICING.skills.length > 0) selectSkill(PRICING.skills[0].id);
+            updateBalanceDisplay();
+        });
+
+        // ══════════════════════════════════════════════════════════
+        // NEW CHAT
+        // ══════════════════════════════════════════════════════════
+        function newChat() {
+            State.currentSessionId = null;
+            State.currentMessages = [];
+            const area = document.getElementById('chat-area');
+            area.innerHTML = `
+        <div class="chat-empty" id="chat-empty">
+            <div class="chat-empty-icon">🤖</div>
+            <div class="chat-empty-title">เลือก Skill แล้วเริ่มถามได้เลย</div>
+            <div class="chat-empty-sub">คลิกที่ชื่อ Skill ด้านบนเพื่อเลือก</div>
+        </div>`;
+            renderSessionList();
+            document.getElementById('chat-input').focus();
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // LOAD SESSION FROM HISTORY
+        // ══════════════════════════════════════════════════════════
+        async function loadSession(sessionId) {
+            if (State.isRunning) { showToast('กรุณารอให้ AI ตอบเสร็จก่อน', 'error'); return; }
+            const session = await apiGetSession(sessionId);
+            if (!session) { showToast('ไม่พบ session นี้', 'error'); return; }
+
+            State.currentSessionId = session.id;
+            State.currentMessages = session.messages || [];
+
+            // Set skill to session's skill
+            if (session.skill_id) selectSkill(session.skill_id);
+
+            // Render all messages
+            renderChatMessages(State.currentMessages);
+            renderSessionList();
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // RENDER ALL MESSAGES IN CHAT AREA
+        // ══════════════════════════════════════════════════════════
+        function renderChatMessages(messages) {
+            const area = document.getElementById('chat-area');
+            area.innerHTML = '';
+            if (!messages || messages.length === 0) {
+                area.innerHTML = `
+            <div class="chat-empty" id="chat-empty">
+                <div class="chat-empty-icon">🤖</div>
+                <div class="chat-empty-title">เลือก Skill แล้วเริ่มถามได้เลย</div>
+                <div class="chat-empty-sub">คลิกที่ชื่อ Skill ด้านบนเพื่อเลือก</div>
+            </div>`;
+                return;
+            }
+            messages.forEach(msg => {
+                if (msg.role === 'user') {
+                    const div = document.createElement('div');
+                    div.className = 'chat-msg user';
+                    div.innerHTML = '<div class="msg-bubble">' + esc(msg.content) + '</div>';
+                    area.appendChild(div);
+                } else if (msg.role === 'assistant') {
+                    const div = document.createElement('div');
+                    div.className = 'chat-msg assistant';
+                    let html = '<div class="msg-bubble">' + esc(msg.content) + '</div>';
+                    if (msg.cost !== undefined) {
+                        const tok = (msg.inputTokens || 0) + (msg.outputTokens || 0);
+                        html += '<div class="cost-badge">' + tok.toLocaleString() + ' tokens · ฿' + (msg.cost || 0).toFixed(4) + ' · ' + ((msg.durationMs || 0) / 1000).toFixed(1) + 's</div>';
+                    }
+                    div.innerHTML = html;
+                    area.appendChild(div);
+                }
+            });
+            area.scrollTop = area.scrollHeight;
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // RENDER SESSION LIST (SIDEBAR)
+        // ══════════════════════════════════════════════════════════
+        function renderSessionList() {
+            const list = document.getElementById('history-list');
+            if (!State.sessions || State.sessions.length === 0) {
+                list.innerHTML = '<div class="history-empty">ยังไม่มีประวัติ</div>';
+                return;
+            }
+
+            // Group by date
+            const now = new Date();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            const yesterdayStart = todayStart - 86400000;
+            const weekStart = todayStart - 7 * 86400000;
+            const monthStart = todayStart - 30 * 86400000;
+
+            const groups = { 'วันนี้': [], 'เมื่อวาน': [], '7 วันที่ผ่านมา': [], 'เดือนนี้': [], 'เก่ากว่านี้': [] };
+            State.sessions.forEach(s => {
+                const t = new Date(s.updated_at).getTime();
+                const dayT = new Date(new Date(s.updated_at).getFullYear(), new Date(s.updated_at).getMonth(), new Date(s.updated_at).getDate()).getTime();
+                if (dayT >= todayStart) groups['วันนี้'].push(s);
+                else if (dayT >= yesterdayStart) groups['เมื่อวาน'].push(s);
+                else if (t >= weekStart) groups['7 วันที่ผ่านมา'].push(s);
+                else if (t >= monthStart) groups['เดือนนี้'].push(s);
+                else groups['เก่ากว่านี้'].push(s);
+            });
+
+            let html = '';
+            for (const [label, items] of Object.entries(groups)) {
+                if (items.length === 0) continue;
+                html += '<div class="date-group-label">' + esc(label) + '</div>';
+                items.forEach(s => {
+                    const active = s.id === State.currentSessionId ? 'active' : '';
+                    html += `<div class="session-item ${active}" onclick="loadSession(${s.id})">
+                <span class="session-emoji">${esc(s.skill_emoji || '💬')}</span>
+                <span class="session-title" title="${esc(s.title)}">${esc(s.title)}</span>
+                <button class="session-del" onclick="deleteSession(event,${s.id})" title="ลบ">×</button>
+            </div>`;
+                });
+            }
+            list.innerHTML = html;
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // DELETE SESSION
+        // ══════════════════════════════════════════════════════════
+        async function deleteSession(e, sessionId) {
+            e.stopPropagation();
+            await apiDeleteSession(sessionId);
+            State.sessions = State.sessions.filter(s => s.id !== sessionId);
+            if (State.currentSessionId === sessionId) newChat();
+            else renderSessionList();
+            showToast('ลบ chat เรียบร้อย');
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // SKILL PICKER
+        // ══════════════════════════════════════════════════════════
+        function openSkillPicker() {
+            document.getElementById('skill-picker-grid').innerHTML = PRICING.skills.map(s =>
+                '<div class="skill-picker-item ' + (State.selectedSkill === s.id ? 'active' : '') + '" onclick="selectSkill(\'' + s.id + '\'); closeOverlay(\'skill-picker-overlay\')">'
+                + '<span class="skill-emoji">' + s.emoji + '</span><div><div class="skill-info-name">' + s.name + '</div>'
+                + '<div class="skill-info-desc">' + s.desc.substring(0, 60) + '...</div></div></div>'
+            ).join('');
+            document.getElementById('skill-picker-overlay').classList.add('open');
+        }
+
+        function selectSkill(skillId) {
+            State.selectedSkill = skillId;
+            const skill = PRICING.skills.find(s => s.id === skillId);
+            if (skill) document.getElementById('current-skill-name').textContent = skill.emoji + ' ' + skill.name;
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // SEND MESSAGE
+        // ══════════════════════════════════════════════════════════
+        async function sendMessage() {
+            if (State.isRunning) return;
+            const inputEl = document.getElementById('chat-input');
+            let userText = inputEl.value.trim();
+            if (!userText && !State.attachedFile) { showToast('กรุณาใส่ข้อความก่อน', 'error'); return; }
+            if (State.balance <= 0) { showToast('เครดิตหมด กรุณาติดต่อผู้ดูแลระบบ', 'error'); return; }
+            // Default to 'auto' skill if nothing selected
+            const selectedSkillId = State.selectedSkill || 'auto';
+            const skill = PRICING.skills.find(s => s.id === selectedSkillId) || PRICING.skills[0];
+            const displayText = userText || '[File: ' + (State.attachedFile ? State.attachedFile.name : '') + ']';
+            let prompt = userText;
+            if (State.attachedFile) { prompt = (prompt ? prompt + '\n\n' : '') + '[File: ' + State.attachedFile.name + ']\n' + State.attachedFile.content; removeFile(); }
+            inputEl.value = ''; inputEl.style.height = 'auto';
+
+            // Add user message to current messages
+            const userMsg = { role: 'user', content: displayText, timestamp: new Date().toISOString() };
+            State.currentMessages.push(userMsg);
+
+            // Render user bubble
+            const area = document.getElementById('chat-area');
+            const emptyEl = document.getElementById('chat-empty'); if (emptyEl) emptyEl.remove();
+            const userDiv = document.createElement('div'); userDiv.className = 'chat-msg user';
+            userDiv.innerHTML = '<div class="msg-bubble">' + esc(displayText) + '</div>';
+            area.appendChild(userDiv); area.scrollTop = area.scrollHeight;
+
+            State.isRunning = true; document.getElementById('send-btn').disabled = true;
+
+            // Typing indicator
+            const typingDiv = document.createElement('div'); typingDiv.className = 'chat-msg assistant'; typingDiv.id = 'typing-el';
+            typingDiv.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+            area.appendChild(typingDiv); area.scrollTop = area.scrollHeight;
+
+            const session = Auth.getSession();
+            const projs = JSON.parse(localStorage.getItem('agenthub_projects') || '[]');
+            const proj = projs.find(p => p.id === session?.projectId);
+            const rates = proj ? { inputRate: proj.inputRate, outputRate: proj.outputRate } : { inputRate: 0.50, outputRate: 1.50 };
+
+            let accumulated = '', responseMsgEl = null;
+
+            await AIClient.run(skill.id, prompt, skill.systemPrompt,
+                chunk => {
+                    accumulated += chunk;
+                    const t = document.getElementById('typing-el'); if (t) t.remove();
+                    if (!responseMsgEl) {
+                        const div = document.createElement('div'); div.className = 'chat-msg assistant';
+                        div.innerHTML = '<div class="msg-bubble" id="stream-bubble"></div>';
+                        area.appendChild(div); responseMsgEl = div;
+                    }
+                    const b = document.getElementById('stream-bubble'); if (b) b.innerHTML = esc(accumulated);
+                    area.scrollTop = area.scrollHeight;
+                },
+                async result => {
+                    const t = document.getElementById('typing-el'); if (t) t.remove();
+                    const cost = result.cost != null ? result.cost : (result.inputTokens / 1000) * rates.inputRate + (result.outputTokens / 1000) * rates.outputRate;
+
+                    // Cost badge
+                    if (responseMsgEl) {
+                        const badge = document.createElement('div'); badge.className = 'cost-badge';
+                        badge.textContent = (result.inputTokens + result.outputTokens).toLocaleString() + ' tokens · ฿' + cost.toFixed(4) + ' · ' + (result.durationMs / 1000).toFixed(1) + 's';
+                        responseMsgEl.appendChild(badge);
+                        const b = document.getElementById('stream-bubble'); if (b) b.removeAttribute('id');
+                    }
+
+                    // Add assistant message to State.currentMessages
+                    const assistantMsg = {
+                        role: 'assistant', content: accumulated,
+                        inputTokens: result.inputTokens, outputTokens: result.outputTokens,
+                        cost, durationMs: result.durationMs, timestamp: new Date().toISOString()
+                    };
+                    State.currentMessages.push(assistantMsg);
+
+                    // Save/update session
+                    if (session && session.userId) {
+                        if (!State.currentSessionId) {
+                            // Create new session
+                            const title = displayText.replace(/\s+/g, ' ').substring(0, 45);
+                            const newId = await apiCreateSession(
+                                session.userId, title,
+                                skill.id, skill.name, skill.emoji,
+                                State.currentMessages
+                            );
+                            if (newId) {
+                                State.currentSessionId = newId;
+                                await apiLoadSessions(session.userId);
+                            }
+                        } else {
+                            // Update existing session
+                            await apiUpdateSession(State.currentSessionId, State.currentMessages);
+                            // Update local sessions list updated_at
+                            const idx = State.sessions.findIndex(s => s.id === State.currentSessionId);
+                            if (idx !== -1) State.sessions[idx].updated_at = new Date().toISOString();
+                            renderSessionList();
+                        }
+                    }
+
+                    // Usage history
+                    State.addUsageEntry({
+                        skillId: skill.id, skillName: skill.name, skillEmoji: skill.emoji,
+                        prompt: displayText.substring(0, 100), response: accumulated.substring(0, 200),
+                        inputTokens: result.inputTokens, outputTokens: result.outputTokens, cost, durationMs: result.durationMs
+                    });
+
+                    updateBalanceDisplay();
+                    showToast('✅ เสร็จแล้ว · ฿' + cost.toFixed(4), 'success');
+                    State.isRunning = false; document.getElementById('send-btn').disabled = false;
+                },
+                rates
+            );
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // UI HELPERS
+        // ══════════════════════════════════════════════════════════
+        function updateBalanceDisplay() { document.getElementById('sidebar-balance').textContent = '฿' + State.balance.toFixed(2); }
+
+        function overlayClick(e, id) { if (e.target === document.getElementById(id)) closeOverlay(id); }
+        function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+        function toggleUserMenu() { document.getElementById('user-dropdown').classList.toggle('open'); }
+        document.addEventListener('click', e => { if (!document.getElementById('user-area').contains(e.target)) document.getElementById('user-dropdown').classList.remove('open'); });
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                State.attachedFile = { name: file.name, content: ev.target.result };
+                document.getElementById('attached-file-display').innerHTML =
+                    '<div class="attached-file">📄 ' + esc(file.name) + '<button onclick="removeFile()">×</button></div>';
+            };
+            reader.readAsText(file); e.target.value = '';
+        }
+
+        function removeFile() { State.attachedFile = null; document.getElementById('attached-file-display').innerHTML = ''; }
+        function handleInputKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+        function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
+        function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+        // ══════════════════════════════════════════════════════════
+        // USAGE MODAL
+        // ══════════════════════════════════════════════════════════
+        function openUsage() {
+            document.getElementById('user-dropdown').classList.remove('open');
+            document.getElementById('usage-balance').textContent = '฿' + State.balance.toFixed(2);
+            document.getElementById('usage-requests').textContent = State.usageHistory.length;
+            const tokens = State.usageHistory.reduce((s, h) => s + (h.inputTokens || 0) + (h.outputTokens || 0), 0);
+            const cost = State.usageHistory.reduce((s, h) => s + (h.cost || 0), 0);
+            document.getElementById('usage-tokens').textContent = tokens.toLocaleString();
+            document.getElementById('usage-cost').textContent = '฿' + cost.toFixed(4);
+            document.getElementById('usage-modal').classList.add('open');
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // CHANGE PASSWORD
+        // ══════════════════════════════════════════════════════════
+        function openChangePassword() {
+            document.getElementById('user-dropdown').classList.remove('open');
+            document.getElementById('password-modal').classList.add('open');
+        }
+
+        async function changePassword() {
+            const newPwd = document.getElementById('new-password').value;
+            const confirmPwd = document.getElementById('confirm-password').value;
+            if (!newPwd) { showToast('กรุณาใส่ password ใหม่', 'error'); return; }
+            if (newPwd !== confirmPwd) { showToast('Password ไม่ตรงกัน', 'error'); return; }
+            const session = Auth.getSession(); if (!session) return;
+            try {
+                const d = await fetch(BASE + '/api/users').then(r => r.json());
+                if (d.ok) {
+                    const u = d.users.find(u => u.username === session.username);
+                    if (u) await fetch(BASE + '/api/users/' + u.id, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            displayName: u.display_name, role: u.role, plan: u.plan,
+                            balance: u.balance, projectId: u.project_id, password: newPwd
+                        })
+                    });
+                }
+            } catch { }
+            closeOverlay('password-modal');
+            document.getElementById('new-password').value = '';
+            document.getElementById('confirm-password').value = '';
+            showToast('เปลี่ยน Password เรียบร้อย', 'success');
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // TOAST
+        // ══════════════════════════════════════════════════════════
+        function showToast(msg, type = 'info') {
+            const c = document.getElementById('toast-container');
+            const t = document.createElement('div'); t.className = 'toast ' + type; t.textContent = msg;
+            c.appendChild(t);
+            setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2800);
+        }
+    </script>
+</body>
+
+</html>

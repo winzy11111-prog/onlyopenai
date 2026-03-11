@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PetabyteAi — Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #080808;
+            color: #f0f0f0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+            background-size: 48px 48px;
+            pointer-events: none;
+        }
+
+        /* Ambient glow */
+        body::after {
+            content: '';
+            position: fixed;
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .login-wrap {
+            width: 100%;
+            max-width: 440px;
+            padding: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Brand */
+        .brand {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .brand-logo {
+            width: 52px;
+            height: 52px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 14px;
+        }
+
+        .brand-name {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #fff, #888);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .brand-sub {
+            font-size: 0.82rem;
+            color: #555;
+            margin-top: 4px;
+        }
+
+        /* Card */
+        .login-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 20px;
+            padding: 32px;
+            backdrop-filter: blur(12px);
+        }
+
+        /* Role tabs */
+        .role-tabs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 28px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 10px;
+            padding: 4px;
+        }
+
+        .role-tab {
+            padding: 9px;
+            border-radius: 8px;
+            border: none;
+            background: none;
+            color: #666;
+            font-size: 0.875rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+        }
+
+        .role-tab.active {
+            background: rgba(255, 255, 255, 0.09);
+            color: #f0f0f0;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.775rem;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: #f0f0f0;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            padding: 12px 14px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.35);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.04);
+        }
+
+        .form-input::placeholder {
+            color: #444;
+        }
+
+        /* Demo hint */
+        .demo-hint {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 20px;
+            font-size: 0.78rem;
+            color: #666;
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1.7;
+        }
+
+        .demo-hint strong {
+            color: #aaa;
+        }
+
+        /* Submit */
+        .btn-login {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #fff, #aaa);
+            color: #080808;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.01em;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .btn-login:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Error */
+        .error-msg {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .error-msg.show {
+            display: block;
+        }
+
+        /* Footer */
+        .login-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.75rem;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-wrap">
+        <div class="brand">
+            <div class="brand-logo">
+                <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
+                    <path d="M14 2L24 8V20L14 26L4 20V8L14 2Z" stroke="url(#lg)" stroke-width="2" fill="none" />
+                    <circle cx="14" cy="14" r="4" fill="url(#lg)" />
+                    <defs>
+                        <linearGradient id="lg" x1="4" y1="2" x2="24" y2="26" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#ffffff" />
+                            <stop offset="1" stop-color="#888888" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <div class="brand-name">PetabyteAi</div>
+            <div class="brand-sub">AI Coding Assistant for SAP/ABAP</div>
+        </div>
+
+        <div class="login-card">
+            <!-- Role tabs -->
+            <div class="role-tabs">
+                <button class="role-tab active" id="tab-user" onclick="switchTab('user')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    User Login
+                </button>
+                <button class="role-tab" id="tab-admin" onclick="switchTab('admin')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    </svg>
+                    Admin Login
+                </button>
+            </div>
+
+            <!-- Error -->
+            <div class="error-msg" id="error-msg"></div>
+
+            <!-- Form -->
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label class="form-label" for="username">Username</label>
+                    <input class="form-input" id="username" type="text" placeholder="กรอก username..."
+                        autocomplete="username" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <input class="form-input" id="password" type="password" placeholder="กรอก password..."
+                        autocomplete="current-password" required />
+                </div>
+
+                <!-- Demo hint -->
+                <div class="demo-hint" id="demo-hint-user">
+                    <strong>Demo User:</strong> user / user123<br />
+                    <strong>หรือ:</strong> user2 / user456 &nbsp;|&nbsp; user3 / user789
+                </div>
+                <div class="demo-hint" id="demo-hint-admin" style="display:none">
+                    <strong>Demo Admin:</strong> admin / admin123
+                </div>
+
+                <button class="btn-login" type="submit" id="login-btn">เข้าสู่ระบบ</button>
+            </form>
+        </div>
+
+        <div class="login-footer">
+            PetabyteAi — Demo Platform &nbsp;|&nbsp; 2026
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script>
+        let currentRole = 'user';
+
+        // Redirect if already logged in
+        (function () {
+            const session = Auth.getSession();
+            if (session) {
+                window.location.href = session.role === 'admin' ? 'admin.html' : 'index.html';
+            }
+        })();
+
+        function switchTab(role) {
+            currentRole = role;
+            document.getElementById('tab-user').classList.toggle('active', role === 'user');
+            document.getElementById('tab-admin').classList.toggle('active', role === 'admin');
+            document.getElementById('demo-hint-user').style.display = role === 'user' ? 'block' : 'none';
+            document.getElementById('demo-hint-admin').style.display = role === 'admin' ? 'block' : 'none';
+            hideError();
+            // Pre-fill for convenience
+            document.getElementById('username').value = role === 'admin' ? 'admin' : 'user';
+            document.getElementById('password').value = role === 'admin' ? 'admin123' : 'user123';
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error-msg');
+            el.textContent = msg;
+            el.classList.add('show');
+        }
+
+        function hideError() {
+            document.getElementById('error-msg').classList.remove('show');
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            hideError();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('login-btn');
+
+            btn.disabled = true;
+            btn.textContent = 'กำลังตรวจสอบ...';
+
+            try {
+                const result = await Auth.login(username, password);
+                if (!result.ok) {
+                    showError(result.error);
+                    btn.disabled = false;
+                    btn.textContent = 'เข้าสู่ระบบ';
+                    return;
+                }
+                window.location.href = result.session.role === 'admin' ? 'admin.html' : 'index.html';
+            } catch (e) {
+                showError('เกิดข้อผิดพลาด กรุณาลองใหม่');
+                btn.disabled = false;
+                btn.textContent = 'เข้าสู่ระบบ';
+            }
+        }
+
+        // Pre-fill user credentials on load
+        document.getElementById('username').value = 'user';
+        document.getElementById('password').value = 'user123';
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PetabyteAi — Admin Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+        /* ── Admin extras ─────────────────────────── */
+        .admin-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: #e8e8e8;
+            font-size: .7rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 100px;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+        }
+
+        .input-sm {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #f0f0f0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: .82rem;
+            padding: 6px 10px;
+            width: 90px;
+            text-align: right;
+        }
+
+        .input-sm:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, .35);
+        }
+
+        .btn-action {
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: .78rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all .18s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-save {
+            background: rgba(255, 255, 255, .1);
+            color: #e8e8e8;
+        }
+
+        .btn-save:hover {
+            background: rgba(255, 255, 255, .2);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, .1);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, .2);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, .22);
+        }
+
+        .btn-primary-sm {
+            background: linear-gradient(135deg, #fff, #aaa);
+            color: #080808;
+            font-weight: 700;
+        }
+
+        .btn-primary-sm:hover {
+            transform: translateY(-1px);
+        }
+
+        /* tables */
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .user-table th,
+        .user-table td {
+            padding: 11px 14px;
+            text-align: left;
+            font-size: .83rem;
+            border-bottom: 1px solid rgba(255, 255, 255, .06);
+        }
+
+        .user-table th {
+            color: #444;
+            font-weight: 600;
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .user-table td {
+            color: #888;
+        }
+
+        .user-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .user-table tr:hover td {
+            background: rgba(255, 255, 255, .02);
+        }
+
+        .user-table .val {
+            color: #f0f0f0;
+            font-weight: 500;
+        }
+
+        .plan-badge {
+            display: inline-block;
+            padding: 2px 9px;
+            border-radius: 100px;
+            font-size: .7rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, .07);
+            color: #aaa;
+        }
+
+        .plan-badge.pro {
+            border: 1px solid rgba(255, 255, 255, .2);
+            color: #e8e8e8;
+        }
+
+        /* log */
+        .log-entry {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, .05);
+            font-size: .82rem;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-user {
+            font-weight: 600;
+            color: #e0e0e0;
+            margin-bottom: 2px;
+        }
+
+        .log-skill {
+            color: #888;
+        }
+
+        .log-cost {
+            color: #ccc;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: .78rem;
+            white-space: nowrap;
+            margin-left: 12px;
+        }
+
+        .log-time {
+            color: #444;
+            font-size: .74rem;
+        }
+
+        /* project cards */
+        .proj-card {
+            margin-bottom: 14px;
+        }
+
+        /* overview */
+        .overview-mini {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .mini-card {
+            background: rgba(255, 255, 255, .03);
+            border: 1px solid rgba(255, 255, 255, .07);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .mini-card-label {
+            font-size: .72rem;
+            color: #444;
+            margin-bottom: 6px;
+        }
+
+        .mini-card-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #f0f0f0;
+        }
+
+        .mini-card-sub {
+            font-size: .72rem;
+            color: #555;
+            margin-top: 3px;
+        }
+
+        /* sidebar admin info */
+        .admin-user-info {
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, .06);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .admin-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .08);
+            border: 1px solid rgba(255, 255, 255, .12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .9rem;
+            flex-shrink: 0;
+        }
+
+        .admin-name {
+            font-size: .85rem;
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+
+        .sidebar-logout {
+            margin: 0 14px 16px;
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 9px;
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid rgba(255, 255, 255, .08);
+            border-radius: 8px;
+            color: #666;
+            font-family: 'Inter', sans-serif;
+            font-size: .82rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            transition: all .18s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, .08);
+            color: #aaa;
+        }
+
+        /* flash */
+        .flash {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(255, 255, 255, .07);
+            border: 1px solid rgba(255, 255, 255, .15);
+            color: #e0e0e0;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: .85rem;
+            transform: translateX(120%);
+            transition: transform .3s ease;
+            z-index: 2000;
+        }
+
+        .flash.show {
+            transform: translateX(0);
+        }
+
+        /* ── MODAL ───────────────────────────────── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .75);
+            backdrop-filter: blur(4px);
+            z-index: 1500;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-box {
+            background: #111;
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: 18px;
+            padding: 28px;
+            width: 100%;
+            max-width: 460px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .8);
+        }
+
+        .modal-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #e8e8e8;
+        }
+
+        .modal-field {
+            margin-bottom: 14px;
+        }
+
+        .modal-label {
+            display: block;
+            font-size: .72rem;
+            font-weight: 600;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            margin-bottom: 6px;
+        }
+
+        .modal-input {
+            width: 100%;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: 8px;
+            color: #f0f0f0;
+            font-family: 'Inter', sans-serif;
+            font-size: .875rem;
+            padding: 10px 12px;
+            transition: border-color .2s;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, .35);
+        }
+
+        .modal-input::placeholder {
+            color: #333;
+        }
+
+        .modal-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .modal-error {
+            font-size: .78rem;
+            color: #fca5a5;
+            margin-bottom: 10px;
+            min-height: 18px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .btn-modal-cancel {
+            padding: 9px 20px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid rgba(255, 255, 255, .1);
+            color: #666;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: .875rem;
+            font-weight: 600;
+            transition: all .15s;
+        }
+
+        .btn-modal-cancel:hover {
+            color: #aaa;
+        }
+
+        .btn-modal-submit {
+            padding: 9px 20px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #fff, #aaa);
+            color: #080808;
+            border: none;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: .875rem;
+            font-weight: 700;
+            transition: all .15s;
+        }
+
+        .btn-modal-submit:hover {
+            transform: translateY(-1px);
+        }
+
+        /* ── USAGE ANALYTICS ─────────────────────── */
+        .usage-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        @media(max-width:900px) {
+            .usage-summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media(max-width:540px) {
+            .usage-summary-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .usage-user-card {
+            background: rgba(255, 255, 255, .025);
+            border: 1px solid rgba(255, 255, 255, .07);
+            border-radius: 14px;
+            padding: 18px 20px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all .18s;
+        }
+
+        .usage-user-card:hover {
+            border-color: rgba(255, 255, 255, .18);
+            background: rgba(255, 255, 255, .04);
+        }
+
+        .usage-user-card.expanded {
+            border-color: rgba(255, 255, 255, .2);
+        }
+
+        .usage-user-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .usage-user-name {
+            font-weight: 700;
+            color: #e8e8e8;
+            font-size: .9rem;
+        }
+
+        .usage-user-meta {
+            font-size: .75rem;
+            color: #666;
+            margin-top: 3px;
+        }
+
+        .usage-user-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, .06);
+        }
+
+        @media(max-width:640px) {
+            .usage-user-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .usage-stat-box {
+            background: rgba(255, 255, 255, .03);
+            border-radius: 8px;
+            padding: 10px 12px;
+        }
+
+        .usage-stat-label {
+            font-size: .68rem;
+            color: #555;
+            margin-bottom: 4px;
+        }
+
+        .usage-stat-val {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #f0f0f0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .usage-bar-wrap {
+            margin-top: 10px;
+        }
+
+        .usage-bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: .72rem;
+            color: #555;
+            margin-bottom: 4px;
+        }
+
+        .usage-bar-track {
+            height: 5px;
+            background: rgba(255, 255, 255, .07);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .usage-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #a78bfa, #38bdf8);
+            border-radius: 99px;
+            transition: width .4s ease;
+        }
+
+        .usage-history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: .78rem;
+        }
+
+        .usage-history-table th {
+            color: #444;
+            font-weight: 600;
+            font-size: .68rem;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            padding: 6px 10px;
+            text-align: left;
+        }
+
+        .usage-history-table td {
+            padding: 7px 10px;
+            color: #777;
+            border-top: 1px solid rgba(255, 255, 255, .04);
+        }
+
+        .usage-history-table td.val {
+            color: #c0c0c0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .usage-detail-section {
+            display: none;
+            padding-top: 4px;
+        }
+
+        .usage-detail-section.open {
+            display: block;
+        }
+
+        @media(max-width:900px) {
+            .overview-mini {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media(max-width:540px) {
+            .overview-mini {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-icon">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                    <path d="M14 2L24 8V20L14 26L4 20V8L14 2Z" stroke="url(#ag)" stroke-width="2" fill="none" />
+                    <circle cx="14" cy="14" r="4" fill="url(#ag)" />
+                    <defs>
+                        <linearGradient id="ag" x1="4" y1="2" x2="24" y2="26" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#ffffff" />
+                            <stop offset="1" stop-color="#888888" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+            <div class="brand-name">PetabyteAi</div>
+        </div>
+
+        <div class="admin-user-info">
+            <div class="admin-avatar">🛡️</div>
+            <div>
+                <div class="admin-name" id="admin-display-name">Admin</div>
+                <div style="margin-top:3px"><span class="admin-badge">Admin</span></div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a class="nav-item active" onclick="admin.navigate('overview');return false;" href="#" id="nav-overview">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                </svg>
+                <span>Overview</span>
+            </a>
+            <a class="nav-item" onclick="admin.navigate('users');return false;" href="#" id="nav-users">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M23 21v-2a4 4 0 00-3-3.87" />
+                    <path d="M16 3.13a4 4 0 010 7.75" />
+                </svg>
+                <span>User Management</span>
+            </a>
+            <a class="nav-item" onclick="admin.navigate('projects');return false;" href="#" id="nav-projects">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" />
+                </svg>
+                <span>Projects</span>
+            </a>
+            <a class="nav-item" onclick="admin.navigate('activity');return false;" href="#" id="nav-activity">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                </svg>
+                <span>Activity Log</span>
+            </a>
+            <a class="nav-item" onclick="admin.navigate('usage');return false;" href="#" id="nav-usage">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="20" x2="18" y2="10" />
+                    <line x1="12" y1="20" x2="12" y2="4" />
+                    <line x1="6" y1="20" x2="6" y2="14" />
+                </svg>
+                <span>Usage Analytics</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-logout">
+            <button class="logout-btn" onclick="Auth.logout()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg>
+                ออกจากระบบ
+            </button>
+        </div>
+    </aside>
+
+    <!-- Mobile header -->
+    <header class="mobile-header">
+        <button class="hamburger" id="hamburger-btn"><span></span><span></span><span></span></button>
+        <span class="mobile-brand">Admin Dashboard</span>
+    </header>
+
+    <main class="main-content">
+
+        <!-- OVERVIEW -->
+        <div class="view" id="view-overview">
+            <div class="page-header">
+                <div>
+                    <h2 class="page-title">Overview</h2>
+                    <p class="page-subtitle">ภาพรวมระบบทั้งหมด</p>
+                </div>
+                <span class="admin-badge">🛡️ Admin Mode</span>
+            </div>
+            <div class="overview-mini" id="overview-mini"></div>
+            <div class="glass-card">
+                <h3 class="card-title">Users &amp; Projects</h3>
+                <div id="overview-user-list" style="margin-top:14px"></div>
+            </div>
+        </div>
+
+        <!-- USER MANAGEMENT -->
+        <div class="view hidden" id="view-users">
+            <div class="page-header">
+                <div>
+                    <h2 class="page-title">User Management</h2>
+                    <p class="page-subtitle">เพิ่ม ลบ แก้ไข credit และ project ของ user</p>
+                </div>
+                <button class="btn-action btn-primary-sm" style="padding:9px 20px;font-size:.875rem"
+                    onclick="admin.openAddUser()">+ Add User</button>
+            </div>
+            <div class="glass-card" style="overflow-x:auto">
+                <table class="user-table" id="user-table"></table>
+            </div>
+        </div>
+
+        <!-- PROJECTS -->
+        <div class="view hidden" id="view-projects">
+            <div class="page-header">
+                <div>
+                    <h2 class="page-title">Projects</h2>
+                    <p class="page-subtitle">จัดการ Project และ rate ของแต่ละ project</p>
+                </div>
+                <button class="btn-action btn-primary-sm" style="padding:9px 20px;font-size:.875rem"
+                    onclick="admin.openAddProject()">+ Add Project</button>
+            </div>
+            <div id="project-list"></div>
+        </div>
+
+        <!-- ACTIVITY LOG -->
+        <div class="view hidden" id="view-activity">
+            <div class="page-header">
+                <div>
+                    <h2 class="page-title">Activity Log</h2>
+                    <p class="page-subtitle">ประวัติการใช้งานรวมทุก user</p>
+                </div>
+                <button class="btn-action btn-danger" onclick="admin.clearAllHistory()">ล้าง Log ทั้งหมด</button>
+            </div>
+            <div class="glass-card">
+                <div id="activity-log"></div>
+            </div>
+        </div>
+
+        <!-- USAGE ANALYTICS -->
+        <div class="view hidden" id="view-usage">
+            <div class="page-header">
+                <div>
+                    <h2 class="page-title">Usage Analytics</h2>
+                    <p class="page-subtitle">สรุปการใช้ token และค่าใช้จ่ายรายผู้ใช้</p>
+                </div>
+                <button class="btn-action btn-save" onclick="admin.renderUsage()">🔄 รีเฟรช</button>
+            </div>
+
+            <!-- Summary cards -->
+            <div class="usage-summary-grid" id="usage-summary-grid"></div>
+
+            <!-- Per-user cards -->
+            <div class="glass-card">
+                <h3 class="card-title" style="margin-bottom:16px">การใช้งานรายผู้ใช้</h3>
+                <div id="usage-user-list"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Flash -->
+    <div class="flash" id="flash"></div>
+
+    <!-- MODAL: Add User -->
+    <div class="modal-overlay" id="modal-add-user">
+        <div class="modal-box" style="max-width:500px">
+            <div class="modal-title">Create a new user</div>
+
+            <!-- Project -->
+            <div class="modal-field">
+                <label class="modal-label">Project</label>
+                <select class="modal-input" id="au-project" style="color:#e8e8e8">
+                    <option value="">— Select Project —</option>
+                </select>
+            </div>
+
+            <!-- Username -->
+            <div class="modal-field">
+                <label class="modal-label">Username <span style="color:#e05555">*</span></label>
+                <input class="modal-input" id="au-username" type="text" placeholder="Enter your username"
+                    autocomplete="off" />
+            </div>
+
+            <!-- Password -->
+            <div class="modal-field">
+                <label class="modal-label">Password <span style="color:#e05555">*</span></label>
+                <div style="position:relative">
+                    <input class="modal-input" id="au-password" type="password" placeholder="Enter password here"
+                        style="padding-right:72px" autocomplete="new-password" oninput="admin.checkPwStrength()" />
+                    <div style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;gap:4px">
+                        <button type="button" title="Show/Hide" onclick="admin.togglePw('au-password','au-eye')"
+                            style="background:none;border:none;cursor:pointer;color:#555;padding:4px;display:flex;align-items:center">
+                            <svg id="au-eye" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                        <button type="button" title="Copy" onclick="admin.copyToClipboard('au-password')"
+                            style="background:none;border:none;cursor:pointer;color:#555;padding:4px;display:flex;align-items:center">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" />
+                                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="au-pw-hint" style="font-size:0.72rem;color:#555;margin-top:5px">
+                    Must be 8 or more characters and contain at least 1 number (0-9) and 1 upper case letter (A-Z)
+                </div>
+            </div>
+
+            <!-- Generate Password -->
+            <button type="button" onclick="admin.generatePassword()" style="width:100%;padding:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);
+                       border-radius:8px;color:#ccc;font-family:'Inter',sans-serif;font-size:.875rem;font-weight:600;
+                       cursor:pointer;margin-bottom:14px;transition:all .15s"
+                onmouseover="this.style.background='rgba(255,255,255,0.1)'"
+                onmouseout="this.style.background='rgba(255,255,255,0.06)'">
+                🔑 Generate Password
+            </button>
+
+            <!-- Confirm Password -->
+            <div class="modal-field">
+                <label class="modal-label">Confirm password <span style="color:#e05555">*</span></label>
+                <div style="position:relative">
+                    <input class="modal-input" id="au-confirm" type="password" placeholder="Enter password here"
+                        style="padding-right:72px" autocomplete="new-password" />
+                    <div style="position:absolute;right:8px;top:50%;transform:translateY(-50%);display:flex;gap:4px">
+                        <button type="button" title="Show/Hide" onclick="admin.togglePw('au-confirm','au-eye2')"
+                            style="background:none;border:none;cursor:pointer;color:#555;padding:4px;display:flex;align-items:center">
+                            <svg id="au-eye2" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                        <button type="button" title="Paste from password" onclick="admin.pastePassword()"
+                            style="background:none;border:none;cursor:pointer;color:#555;padding:4px;display:flex;align-items:center">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" />
+                                <rect x="8" y="2" width="8" height="4" rx="1" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Name & Surname -->
+            <div class="modal-row">
+                <div class="modal-field">
+                    <label class="modal-label">Name <span style="color:#e05555">*</span></label>
+                    <input class="modal-input" id="au-firstname" type="text" placeholder="Enter name here" />
+                </div>
+                <div class="modal-field">
+                    <label class="modal-label">Surname <span style="color:#e05555">*</span></label>
+                    <input class="modal-input" id="au-lastname" type="text" placeholder="Enter surname here" />
+                </div>
+            </div>
+
+            <!-- Credit -->
+            <div class="modal-field">
+                <label class="modal-label">Credit เริ่มต้น (฿)</label>
+                <input class="modal-input" id="au-balance" type="number" step="0.01" min="0" value="100" />
+            </div>
+
+            <div class="modal-error" id="au-error"></div>
+            <div class="modal-actions">
+                <button class="btn-modal-cancel" onclick="hideModal('modal-add-user')">Cancel</button>
+                <button class="btn-modal-submit" onclick="admin.submitAddUser()">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Add Project -->
+    <div class="modal-overlay" id="modal-add-project">
+        <div class="modal-box">
+            <div class="modal-title">📂 สร้าง Project ใหม่</div>
+            <div class="modal-field">
+                <label class="modal-label">ชื่อ Project</label>
+                <input class="modal-input" id="ap-name" type="text" placeholder="เช่น SAP S/4HANA Migration" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">คำอธิบาย (ไม่บังคับ)</label>
+                <input class="modal-input" id="ap-desc" type="text" placeholder="รายละเอียด project..." />
+            </div>
+            <div class="modal-row">
+                <div class="modal-field">
+                    <label class="modal-label">Input Rate (฿/1K tokens)</label>
+                    <input class="modal-input" id="ap-input-rate" type="number" step="0.01" min="0" value="0.50" />
+                </div>
+                <div class="modal-field">
+                    <label class="modal-label">Output Rate (฿/1K tokens)</label>
+                    <input class="modal-input" id="ap-output-rate" type="number" step="0.01" min="0" value="1.50" />
+                </div>
+            </div>
+            <div class="modal-error" id="ap-error"></div>
+            <div class="modal-actions">
+                <button class="btn-modal-cancel" onclick="hideModal('modal-add-project')">ยกเลิก</button>
+                <button class="btn-modal-submit" onclick="admin.submitAddProject()">สร้าง Project</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Edit Project -->
+    <div class="modal-overlay" id="modal-edit-project">
+        <div class="modal-box" style="max-width:520px">
+            <div class="modal-title">✏️ แก้ไข Project</div>
+            <input type="hidden" id="ep-id" />
+            <div class="modal-field">
+                <label class="modal-label">ชื่อ Project</label>
+                <input class="modal-input" id="ep-name" type="text" />
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">คำอธิบาย</label>
+                <input class="modal-input" id="ep-desc" type="text" placeholder="รายละเอียด project..." />
+            </div>
+            <div class="modal-row">
+                <div class="modal-field">
+                    <label class="modal-label">Input Rate (฿/1K tokens)</label>
+                    <input class="modal-input" id="ep-input-rate" type="number" step="0.01" min="0" />
+                </div>
+                <div class="modal-field">
+                    <label class="modal-label">Output Rate (฿/1K tokens)</label>
+                    <input class="modal-input" id="ep-output-rate" type="number" step="0.01" min="0" />
+                </div>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">Credit Limit ต่อ User (฿, 0 = ไม่จำกัด)</label>
+                <input class="modal-input" id="ep-credit-limit" type="number" step="1" min="0" placeholder="0" />
+            </div>
+            <div class="modal-error" id="ep-error"></div>
+            <div class="modal-actions">
+                <button class="btn-modal-cancel" onclick="hideModal('modal-edit-project')">ยกเลิก</button>
+                <button class="btn-modal-submit" onclick="admin.submitEditProject()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Top-up Project -->
+    <div class="modal-overlay" id="modal-topup">
+        <div class="modal-box" style="max-width:400px">
+            <div class="modal-title">💰 เติมเงินเข้า Project</div>
+            <input type="hidden" id="tu-proj-id" />
+            <div
+                style="margin-bottom:14px;padding:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px">
+                <div style="font-size:0.72rem;color:#444;margin-bottom:4px">PROJECT</div>
+                <div style="font-weight:700;color:#e8e8e8" id="tu-proj-name">—</div>
+            </div>
+            <div class="modal-field">
+                <label class="modal-label">จำนวนเงินที่เติม (฿)</label>
+                <input class="modal-input" id="tu-amount" type="number" step="0.01" min="0.01"
+                    placeholder="เช่น 500.00" />
+            </div>
+            <div class="modal-error" id="tu-error"></div>
+            <div class="modal-actions">
+                <button class="btn-modal-cancel" onclick="hideModal('modal-topup')">ยกเลิก</button>
+                <button class="btn-modal-submit" onclick="admin.submitTopup()">เติมเงิน</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/pricing.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+
+</html>
