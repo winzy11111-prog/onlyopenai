@@ -1,0 +1,20 @@
+# ── Dependencies ─────────────────────────────────────────
+node_modules/
+
+# ── Secrets / env (never commit) ─────────────────────────
+.env
+.env.local
+.env.production
+server/.env
+
+# ── Local tooling / editor / agent state ─────────────────
+.claude/
+.DS_Store
+*.swp
+
+# ── Logs ─────────────────────────────────────────────────
+logs/
+*.log
+
+# ── DB data backups (clean-slate dumps — never commit) ───
+backups/

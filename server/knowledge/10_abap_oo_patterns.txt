@@ -1,0 +1,197 @@
+ABAP OBJECT-ORIENTED PATTERNS — PetabyteAi SAP Knowledge Base
+=============================================================
+Version: S/4HANA 2023 | ABAP 7.54+
+
+## 1. CLASS DEFINITION STRUCTURE
+
+### Basic Class
+CLASS zcl_sap_processor DEFINITION
+  PUBLIC FINAL CREATE PUBLIC.
+
+  PUBLIC SECTION.
+    INTERFACES if_oo_adt_classrun.
+    METHODS:
+      constructor IMPORTING iv_bukrs TYPE bukrs,
+      process     IMPORTING iv_belnr TYPE belnr_d
+                  RETURNING VALUE(rv_result) TYPE string
+                  RAISING   zcx_sap_error.
+
+  PRIVATE SECTION.
+    DATA mv_bukrs TYPE bukrs.
+    CONSTANTS mc_max_items TYPE i VALUE 100.
+
+ENDCLASS.
+
+CLASS zcl_sap_processor IMPLEMENTATION.
+  METHOD constructor.
+    mv_bukrs = iv_bukrs.
+  ENDMETHOD.
+
+  METHOD process.
+    " implementation
+    rv_result = |Processed { iv_belnr } for { mv_bukrs }|.
+  ENDMETHOD.
+ENDCLASS.
+
+---
+
+## 2. INTERFACE PATTERN
+
+### Define Interface
+INTERFACE zif_document_handler.
+  METHODS:
+    get_header IMPORTING iv_docno TYPE vbeln
+               RETURNING VALUE(rs_header) TYPE vbak,
+    save       RAISING   zcx_document_error.
+ENDINTERFACE.
+
+### Implement Interface
+CLASS zcl_order_handler DEFINITION PUBLIC CREATE PUBLIC.
+  PUBLIC SECTION.
+    INTERFACES zif_document_handler.
+ENDCLASS.
+
+CLASS zcl_order_handler IMPLEMENTATION.
+  METHOD zif_document_handler~get_header.
+    SELECT SINGLE * FROM vbak INTO rs_header WHERE vbeln = iv_docno.
+  ENDMETHOD.
+  METHOD zif_document_handler~save.
+    COMMIT WORK AND WAIT.
+  ENDMETHOD.
+ENDCLASS.
+
+---
+
+## 3. EXCEPTION CLASS PATTERN
+
+### Define Custom Exception
+CLASS zcx_sap_error DEFINITION
+  PUBLIC INHERITING FROM cx_static_check FINAL CREATE PUBLIC.
+
+  PUBLIC SECTION.
+    CONSTANTS:
+      BEGIN OF not_found,
+        msgid TYPE scx_t100key-msgid VALUE 'ZMSGS',
+        msgno TYPE scx_t100key-msgno VALUE '001',
+        attr1 TYPE scx_t100key-attr1 VALUE 'MV_OBJECT',
+      END OF not_found.
+
+    DATA mv_object TYPE string.
+
+    METHODS constructor
+      IMPORTING textid   LIKE textid OPTIONAL
+                previous LIKE previous OPTIONAL
+                iv_object TYPE string OPTIONAL.
+
+ENDCLASS.
+
+### Raise and Catch Exception
+TRY.
+    DATA(lo_handler) = NEW zcl_order_handler( ).
+    DATA(ls_header)  = lo_handler->zif_document_handler~get_header( iv_docno = lv_vbeln ).
+  CATCH zcx_sap_error INTO DATA(lx_error).
+    MESSAGE lx_error->get_text( ) TYPE 'E'.
+ENDTRY.
+
+---
+
+## 4. FACTORY PATTERN
+
+CLASS zcl_processor_factory DEFINITION PUBLIC FINAL CREATE PRIVATE.
+  PUBLIC SECTION.
+    CLASS-METHODS:
+      get_instance IMPORTING iv_type       TYPE string
+                   RETURNING VALUE(ro_obj) TYPE REF TO zif_document_handler.
+ENDCLASS.
+
+CLASS zcl_processor_factory IMPLEMENTATION.
+  METHOD get_instance.
+    ro_obj = SWITCH #( iv_type
+      WHEN 'ORDER'    THEN NEW zcl_order_handler( )
+      WHEN 'DELIVERY' THEN NEW zcl_delivery_handler( )
+      ELSE THROW zcx_sap_error( iv_object = iv_type ) ).
+  ENDMETHOD.
+ENDCLASS.
+
+---
+
+## 5. ABAP UNIT TEST PATTERN
+
+CLASS ltcl_order_test DEFINITION FINAL FOR TESTING
+  RISK LEVEL HARMLESS DURATION SHORT.
+
+  PRIVATE SECTION.
+    DATA mo_cut TYPE REF TO zcl_order_handler.  " CUT = Class Under Test
+
+    METHODS:
+      setup,
+      test_get_header FOR TESTING,
+      test_get_header_not_found FOR TESTING.
+ENDCLASS.
+
+CLASS ltcl_order_test IMPLEMENTATION.
+  METHOD setup.
+    mo_cut = NEW zcl_order_handler( ).
+  ENDMETHOD.
+
+  METHOD test_get_header.
+    DATA(ls_result) = mo_cut->zif_document_handler~get_header( iv_docno = '0000000001' ).
+    cl_abap_unit_assert=>assert_not_initial(
+      act = ls_result-vbeln
+      msg = 'Header should not be empty' ).
+  ENDMETHOD.
+
+  METHOD test_get_header_not_found.
+    TRY.
+        mo_cut->zif_document_handler~get_header( iv_docno = 'INVALID' ).
+        cl_abap_unit_assert=>fail( 'Exception expected' ).
+      CATCH zcx_sap_error.
+        " Expected — test passes
+    ENDTRY.
+  ENDMETHOD.
+ENDCLASS.
+
+---
+
+## 6. MODERN ABAP SYNTAX (7.40+)
+
+### Inline Declarations
+DATA(lo_obj) = NEW zcl_order_handler( ).
+DATA(lt_results) = VALUE t_result_tab( ).
+
+### Table Operations
+" Filter
+DATA(lt_open) = FILTER #( lt_orders USING KEY primary_key WHERE status = 'A' ).
+
+" Reduce
+DATA(lv_total) = REDUCE decfloat16( INIT s = 0
+                                    FOR wa IN lt_items
+                                    NEXT s = s + wa-amount ).
+
+" Corresponding
+DATA(ls_target) = CORRESPONDING target_type( ls_source ).
+
+### String Templates
+DATA(lv_msg) = |Order { lv_vbeln } posted on { sy-datum DATE = USER }|.
+
+### Constructor Expressions
+DATA(lt_filled) = VALUE t_tab(
+  ( field1 = 'A' field2 = 1 )
+  ( field1 = 'B' field2 = 2 ) ).
+
+---
+
+## 7. NAMING CONVENTIONS (SAP Standard)
+
+| Object        | Prefix | Example |
+|---------------|--------|---------|
+| Class         | ZCL_   | ZCL_ORDER_PROCESSOR |
+| Interface     | ZIF_   | ZIF_DOCUMENT_HANDLER |
+| Exception     | ZCX_   | ZCX_ORDER_ERROR |
+| Test Class    | LTCL_  | LTCL_ORDER_TEST |
+| Instance var  | MO_/MV_| MV_BUKRS, MO_HANDLER |
+| Local var     | LO_/LV_| LV_VBELN, LO_ORDER |
+| Parameter in  | IV_/IS_| IV_BUKRS, IS_HEADER |
+| Parameter out | EV_/ES_| EV_RESULT, ES_RETURN |
+| Return value  | RV_/RS_| RV_RESULT, RS_HEADER |
+| Table param   | IT_/ET_| IT_ITEMS, ET_RETURN |

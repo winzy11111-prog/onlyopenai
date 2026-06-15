@@ -192,7 +192,7 @@
         }
 
         .demo-hint strong {
-            color: #aaa;
+            color: var(--text-2);
         }
 
         /* Submit */
@@ -254,42 +254,25 @@
 
 <body>
     <div class="login-wrap">
+        <!-- Phase 16.7: real Petabyte logo. The brand-logo box is sized by
+             existing CSS; only the inner element changes. We bump the slot
+             slightly so the logo with wordmark reads at this entry-page scale. -->
         <div class="brand">
-            <div class="brand-logo">
-                <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
-                    <path d="M14 2L24 8V20L14 26L4 20V8L14 2Z" stroke="url(#lg)" stroke-width="2" fill="none" />
-                    <circle cx="14" cy="14" r="4" fill="url(#lg)" />
-                    <defs>
-                        <linearGradient id="lg" x1="4" y1="2" x2="24" y2="26" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#ffffff" />
-                            <stop offset="1" stop-color="#888888" />
-                        </linearGradient>
-                    </defs>
-                </svg>
+            <div class="brand-logo" style="width:64px;height:64px">
+                <img src="/assets/petabyte2_nobg.png" alt="Petabyte"
+                     style="width:100%;height:100%;object-fit:contain"/>
             </div>
             <div class="brand-name">PetabyteAi</div>
             <div class="brand-sub">AI Coding Assistant for SAP/ABAP</div>
         </div>
 
         <div class="login-card">
-            <!-- Role tabs -->
-            <div class="role-tabs">
-                <button class="role-tab active" id="tab-user" onclick="switchTab('user')">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
-                        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                    </svg>
-                    User Login
-                </button>
-                <button class="role-tab" id="tab-admin" onclick="switchTab('admin')">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    </svg>
-                    Admin Login
-                </button>
-            </div>
+            <!-- Phase 16.26: single unified login form.
+                 The old role-tabs UI (User Login / Admin Login) was cosmetic —
+                 the server determines role from the user record, not from
+                 which tab the visitor clicked. Removed for clarity.
+                 Demo credentials below are kept ONLY as a dev convenience
+                 (single block showing both admin + user creds). -->
 
             <!-- Error -->
             <div class="error-msg" id="error-msg"></div>
@@ -307,16 +290,16 @@
                         autocomplete="current-password" required />
                 </div>
 
-                <!-- Demo hint -->
-                <div class="demo-hint" id="demo-hint-user">
-                    <strong>Demo User:</strong> user / user123<br />
-                    <strong>หรือ:</strong> user2 / user456 &nbsp;|&nbsp; user3 / user789
-                </div>
-                <div class="demo-hint" id="demo-hint-admin" style="display:none">
-                    <strong>Demo Admin:</strong> admin / admin123
-                </div>
-
                 <button class="btn-login" type="submit" id="login-btn">เข้าสู่ระบบ</button>
+
+                <!-- Demo credentials block (dev only — remove before production) -->
+                <div class="demo-hint" style="margin-top:18px">
+                    <div style="font-size:.68rem;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">
+                        🛠 Demo credentials
+                    </div>
+                    <div><strong>Admin:</strong> admin / admin123</div>
+                    <div><strong>User:</strong> user / user123 &nbsp;·&nbsp; user2 / user456 &nbsp;·&nbsp; user3 / user789</div>
+                </div>
             </form>
         </div>
 
@@ -325,29 +308,51 @@
         </div>
     </div>
 
-    <script src="js/auth.js"></script>
+    <script src="js/config.js?v=phase9-1"></script>
+    <script src="js/auth.js?v=phase9-1"></script>
     <script>
-        let currentRole = 'user';
+        // Phase 16.26: removed role tabs — server decides role from the
+        // user record after login, no need to pre-select on the form.
 
         // Redirect if already logged in
         (function () {
             const session = Auth.getSession();
             if (session) {
+                // Phase 8: pending pw change short-circuits everything else
+                if (session.mustChangePassword) {
+                    window.location.href = 'change-password.html';
+                    return;
+                }
                 window.location.href = session.role === 'admin' ? 'admin.html' : 'index.html';
             }
         })();
 
-        function switchTab(role) {
-            currentRole = role;
-            document.getElementById('tab-user').classList.toggle('active', role === 'user');
-            document.getElementById('tab-admin').classList.toggle('active', role === 'admin');
-            document.getElementById('demo-hint-user').style.display = role === 'user' ? 'block' : 'none';
-            document.getElementById('demo-hint-admin').style.display = role === 'admin' ? 'block' : 'none';
-            hideError();
-            // Pre-fill for convenience
-            document.getElementById('username').value = role === 'admin' ? 'admin' : 'user';
-            document.getElementById('password').value = role === 'admin' ? 'admin123' : 'user123';
-        }
+        // Phase 19.5: show a friendly message when we got bounced here
+        // because the previous session expired (?expired=1) or the user
+        // explicitly logged out (?loggedout=1).
+        (function () {
+            try {
+                const q = new URLSearchParams(window.location.search);
+                if (q.get('expired') === '1') {
+                    const el = document.getElementById('error-msg');
+                    if (el) {
+                        el.textContent = '⏱ Session หมดอายุ — กรุณาเข้าสู่ระบบใหม่';
+                        el.classList.add('show');
+                    }
+                } else if (q.get('loggedout') === '1') {
+                    const el = document.getElementById('error-msg');
+                    if (el) {
+                        // Soften the styling for "successful logout" — same
+                        // element, neutral text, no scary red.
+                        el.textContent = '✓ ออกจากระบบเรียบร้อยแล้ว';
+                        el.classList.add('show');
+                        el.style.background = 'rgba(34, 197, 94, 0.10)';
+                        el.style.borderColor = 'rgba(34, 197, 94, 0.30)';
+                        el.style.color = '#15803d';
+                    }
+                }
+            } catch (_) { /* ignore — purely cosmetic */ }
+        })();
 
         function showError(msg) {
             const el = document.getElementById('error-msg');
@@ -372,9 +377,17 @@
             try {
                 const result = await Auth.login(username, password);
                 if (!result.ok) {
-                    showError(result.error);
+                    // Phase 8: surface locked-account messages distinctly
+                    showError(result.locked
+                        ? '🔒 ' + (result.error || 'Account locked')
+                        : (result.error || 'Invalid credentials'));
                     btn.disabled = false;
                     btn.textContent = 'เข้าสู่ระบบ';
+                    return;
+                }
+                // Phase 8: forced password change → go to dedicated page first
+                if (result.mustChangePassword) {
+                    window.location.href = 'change-password.html';
                     return;
                 }
                 window.location.href = result.session.role === 'admin' ? 'admin.html' : 'index.html';

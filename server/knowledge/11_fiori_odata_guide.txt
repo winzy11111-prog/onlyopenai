@@ -1,0 +1,204 @@
+FIORI & ODATA DEVELOPMENT GUIDE — PetabyteAi SAP Knowledge Base
+===============================================================
+Version: S/4HANA 2023 | ABAP 7.54+ | OData V2/V4
+
+## 1. CDS VIEW FOR FIORI (Interface + Consumption)
+
+### Step 1: Interface View (Raw Data)
+@AbapCatalog.sqlViewName: 'ZSALES_ORDER_I'
+@AbapCatalog.compiler.compareFilter: true
+@AccessControl.authorizationCheck: #CHECK
+@EndUserText.label: 'Sales Order Interface View'
+define view ZSALES_ORDER_INTERFACE
+  as select from vbak
+{
+  key vbak.vbeln   as SalesOrder,
+      vbak.audat   as OrderDate,
+      vbak.vkorg   as SalesOrg,
+      vbak.kunnr   as SoldToParty,
+      vbak.netwr   as NetValue,
+      vbak.waerk   as Currency
+}
+
+### Step 2: Consumption View (Fiori Ready)
+@AbapCatalog.sqlViewName: 'ZSALES_ORDER_C'
+@OData.publish: true
+@UI.headerInfo: {
+  typeName: 'Sales Order',
+  typeNamePlural: 'Sales Orders',
+  title: { value: 'SalesOrder' }
+}
+define view ZSALES_ORDER_CONSUMPTION
+  as select from ZSALES_ORDER_INTERFACE
+{
+  @UI.lineItem: [{ position: 10, label: 'Sales Order' }]
+  @UI.selectionField: [{ position: 10 }]
+  key SalesOrder,
+
+  @UI.lineItem: [{ position: 20, label: 'Order Date' }]
+  OrderDate,
+
+  @UI.lineItem: [{ position: 30, label: 'Sales Org' }]
+  SalesOrg,
+
+  @UI.lineItem: [{ position: 40, label: 'Net Value' }]
+  @Semantics.amount.currencyCode: 'Currency'
+  NetValue,
+
+  Currency
+}
+
+---
+
+## 2. ODATA V2 SERVICE (Classic SEGW)
+
+### Create via Transaction SEGW
+1. Create new project: ZSALES_ORDER_SRV
+2. Import from CDS or define entity types manually
+3. Define Entity Type: SalesOrderType
+4. Define Entity Set: SalesOrderSet
+5. Generate runtime objects → Activate
+6. Register in /IWFND/MAINT_SERVICE
+
+### Implement in Class ZCL_ZSALES_ORDER_DPC_EXT
+
+" GET_ENTITYSET (read collection)
+METHOD salesorderset_get_entityset.
+  SELECT vbeln audat vkorg kunnr netwr
+    FROM vbak
+    INTO CORRESPONDING FIELDS OF TABLE et_entityset
+    UP TO 100 ROWS.
+ENDMETHOD.
+
+" GET_ENTITY (read single)
+METHOD salesorderset_get_entity.
+  DATA(lv_vbeln) = it_key_tab[ name = 'SalesOrder' ]-value.
+  SELECT SINGLE * FROM vbak
+    INTO CORRESPONDING FIELDS OF er_entity
+    WHERE vbeln = lv_vbeln.
+ENDMETHOD.
+
+---
+
+## 3. ODATA V4 SERVICE (RAP — Restful ABAP Programming)
+
+### Step 1: Define Behavior Definition
+managed implementation in class zbp_sales_order unique;
+strict ( 2 );
+
+define behavior for ZSALES_ORDER_INTERFACE alias SalesOrder
+persistent table vbak
+lock master
+authorization master ( instance )
+{
+  create;
+  update;
+  delete;
+
+  field ( readonly ) SalesOrder;
+  field ( mandatory ) SoldToParty, SalesOrg;
+
+  action confirmOrder result [1] $self;
+  validation checkSoldToParty on save { field SoldToParty; }
+
+  mapping for vbak
+  {
+    SalesOrder  = vbeln;
+    OrderDate   = audat;
+    SalesOrg    = vkorg;
+    SoldToParty = kunnr;
+    NetValue    = netwr;
+  }
+}
+
+### Step 2: Implement Behavior Class ZBP_SALES_ORDER
+CLASS lhc_salesorder DEFINITION INHERITING FROM cl_abap_behavior_handler.
+  PRIVATE SECTION.
+    METHODS confirmorder FOR MODIFY
+      IMPORTING keys FOR ACTION salesorder~confirmorder RESULT result.
+    METHODS checkSoldToParty FOR VALIDATE ON SAVE
+      IMPORTING keys FOR salesorder~checksoldtoparty.
+ENDCLASS.
+
+CLASS lhc_salesorder IMPLEMENTATION.
+  METHOD confirmorder.
+    " Custom action logic
+    LOOP AT keys INTO DATA(key).
+      " Process confirmation
+      APPEND VALUE #( %tky = key-%tky
+                      %param = VALUE #( salesorder = key-salesorder ) )
+        TO result.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD checkSoldToParty.
+    READ ENTITIES OF zsales_order_interface IN LOCAL MODE
+      ENTITY salesorder FIELDS ( soldtoparty ) WITH CORRESPONDING #( keys )
+      RESULT DATA(lt_orders).
+
+    LOOP AT lt_orders INTO DATA(order).
+      SELECT SINGLE kunnr FROM kna1 INTO @DATA(lv_kunnr)
+        WHERE kunnr = @order-soldtoparty.
+      IF sy-subrc <> 0.
+        APPEND VALUE #(
+          %tky        = order-%tky
+          %state_area = 'CHECK_SOLDTO'
+          %msg        = new_message( id = 'ZMSGS' number = '001'
+                                     severity = if_abap_behv_message=>severity-error
+                                     v1 = order-soldtoparty )
+        ) TO reported-salesorder.
+      ENDIF.
+    ENDLOOP.
+  ENDMETHOD.
+ENDCLASS.
+
+---
+
+## 4. FIORI ELEMENTS — UI ANNOTATIONS
+
+### List Report Page
+@UI.lineItem: [{ position: 10, label: 'Doc No', importance: #HIGH }]
+@UI.selectionField: [{ position: 10 }]
+@UI.fieldGroup: [{ qualifier: 'General', position: 10 }]
+
+### Object Page Header
+@UI.headerInfo: {
+  typeName: 'Sales Order',
+  typeNamePlural: 'Sales Orders',
+  title: { type: #STANDARD, value: 'SalesOrder' },
+  description: { type: #STANDARD, value: 'SoldToParty' }
+}
+
+### Facets (Object Page Sections)
+@UI.facet: [
+  { id: 'GeneralInfo', purpose: #STANDARD, type: #FIELDGROUP_REFERENCE,
+    label: 'General Info', targetQualifier: 'General', position: 10 },
+  { id: 'Items', purpose: #STANDARD, type: #LINEITEM_REFERENCE,
+    label: 'Order Items', targetElement: '_Item', position: 20 }
+]
+
+---
+
+## 5. KEY FIORI TRANSACTION CODES
+
+| T-Code          | Description |
+|-----------------|-------------|
+| SEGW            | OData Service Builder (V2) |
+| /IWFND/MAINT_SERVICE | Activate & Maintain Services |
+| /IWFND/ERROR_LOG | OData Error Log |
+| SBOP_FIOR_LAUNCHPAD | Fiori Launchpad Designer |
+| SE80            | ABAP Workbench (find CDS) |
+| SICF             | Service Activation (HTTP) |
+| ST05            | SQL/HTTP Trace |
+
+---
+
+## 6. COMMON ODATA ERRORS & FIXES
+
+| Error | Cause | Fix |
+|-------|-------|-----|
+| 401 Unauthorized | Missing authorization | Check /IWFND/MAINT_SERVICE, add auth |
+| 404 Not Found | Service not activated | Activate in /IWFND/MAINT_SERVICE |
+| 500 Internal Error | Exception in DPC | Check /IWFND/ERROR_LOG |
+| CSRF token invalid | Missing x-csrf-token | Fetch token first with HEAD request |
+| Key field missing | Wrong entity key | Verify SEGW entity key definition |

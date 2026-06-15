@@ -1,0 +1,137 @@
+ABAP BEST PRACTICES — PetabyteAi SAP Knowledge Base
+=====================================================
+Version: S/4HANA 2023 | Updated: 2025
+
+## 1. DATA DECLARATIONS
+
+### Use TYPE instead of LIKE
+BAD:  DATA ztime LIKE sy-timlo.
+GOOD: DATA ztime TYPE timlo.
+
+BAD:  DATA material LIKE mara-matnr.
+GOOD: DATA material TYPE matnr.
+
+### Inline Declarations (ABAP 7.40+)
+GOOD:
+  DATA(lv_result) = some_function( ).
+  LOOP AT lt_data INTO DATA(ls_row).
+  SELECT * FROM mara INTO TABLE @DATA(lt_mara).
+
+### String Templates
+GOOD: cl_abap_unit_assert=>assert_equals(
+        act = |Material: { lv_matnr }|
+        exp = 'Material: 100-100' ).
+
+---
+
+## 2. SELECT STATEMENTS
+
+### Never SELECT * — only needed fields
+BAD:  SELECT * FROM mara INTO TABLE lt_mara.
+GOOD: SELECT matnr mtart matkl FROM mara INTO TABLE @DATA(lt_mara).
+
+### Always use @ (host variable) in Open SQL
+GOOD:
+  SELECT matnr FROM mara
+    INTO TABLE @DATA(lt_result)
+    WHERE mtart = @lv_mtart.
+
+### No SELECT inside LOOP (N+1 problem)
+BAD:
+  LOOP AT lt_orders INTO ls_order.
+    SELECT SINGLE * FROM vbap INTO ls_vbap WHERE vbeln = ls_order-vbeln.
+  ENDLOOP.
+
+GOOD (JOIN):
+  SELECT h~vbeln i~matnr i~kwmeng
+    FROM vbak AS h
+    INNER JOIN vbap AS i ON h~vbeln = i~vbeln
+    INTO TABLE @DATA(lt_result).
+
+GOOD (FOR ALL ENTRIES):
+  IF lt_orders IS NOT INITIAL.
+    SELECT vbeln matnr kwmeng FROM vbap
+      INTO TABLE @DATA(lt_vbap)
+      FOR ALL ENTRIES IN @lt_orders
+      WHERE vbeln = @lt_orders-vbeln.
+  ENDIF.
+
+### Check sy-subrc after every SELECT
+  SELECT SINGLE matnr FROM mara INTO @DATA(lv_matnr) WHERE matnr = @lv_key.
+  IF sy-subrc <> 0.
+    MESSAGE 'Material not found' TYPE 'E'.
+    RETURN.
+  ENDIF.
+
+---
+
+## 3. OBSOLETE STATEMENTS TO AVOID
+
+| Obsolete | Modern Replacement |
+|---|---|
+| TABLES: mara. | DATA ls_mara TYPE mara. |
+| DATA x LIKE mara-matnr. | DATA x TYPE matnr. |
+| MOVE a TO b. | b = a. |
+| CLEAR ls_wa. APPEND ls_wa TO lt_tab. | lt_tab = VALUE #( BASE lt_tab ( field = value ) ). |
+| SELECT * FROM t WHERE f = v. ENDSELECT. | SELECT FROM t INTO TABLE WHERE. |
+| STRING-OPS ADD SUBTRACT | arithmetic operators |
+| WRITE TO f USING EDIT MASK... | FORMAT statement |
+
+---
+
+## 4. INTERNAL TABLES
+
+### Table Types
+- STANDARD TABLE: default, allow duplicates
+- SORTED TABLE: auto-sorted, binary search, no duplicates on key
+- HASHED TABLE: O(1) access, unique key required
+
+### Read with Binary Search
+  SORT lt_mara BY matnr.
+  READ TABLE lt_mara WITH KEY matnr = lv_key BINARY SEARCH INTO DATA(ls_mara).
+
+### Value Constructor (Modern)
+  DATA(lt_plants) = VALUE t_plant_tab(
+    ( plant = '1000' name = 'Hamburg' )
+    ( plant = '2000' name = 'Berlin'  )
+  ).
+
+### LOOP AT ... WHERE (filter inline)
+  LOOP AT lt_items INTO DATA(ls_item) WHERE werks = '1000'.
+    "process only plant 1000
+  ENDLOOP.
+
+---
+
+## 5. ERROR HANDLING
+
+### Class-based Exceptions (modern)
+  TRY.
+    lv_result = cl_abap_math=>div( num = 10 den = 0 ).
+  CATCH cx_sy_zerodivide INTO DATA(lx_err).
+    cl_abap_message_handler=>handle_exception( lx_err ).
+  ENDTRY.
+
+### RAISE EXCEPTION
+  CLASS zcx_my_exception DEFINITION INHERITING FROM cx_static_check.
+  ...
+  RAISE EXCEPTION TYPE zcx_my_exception
+    EXPORTING textid = zcx_my_exception=>invalid_input.
+
+---
+
+## 6. PERFORMANCE
+
+### Avoid COLLECT for aggregation — use GROUP BY
+BAD:  COLLECT ls_sum INTO lt_sum.
+GOOD: SELECT matnr SUM( kwmeng ) AS total FROM vbap
+        INTO TABLE @DATA(lt_sum) GROUP BY matnr.
+
+### Use HANA-pushdown: filter in WHERE not in LOOP
+BAD:  SELECT * FROM vbak. LOOP... IF vbeln > 'x'. ENDLOOP.
+GOOD: SELECT * FROM vbak WHERE vbeln > 'x'.
+
+### String concatenation: use & or | not CONCATENATE
+BAD:  CONCATENATE lv_a lv_b INTO lv_result.
+GOOD: lv_result = lv_a && lv_b.
+GOOD: lv_result = |{ lv_a }{ lv_b }|.

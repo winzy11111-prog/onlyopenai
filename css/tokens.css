@@ -1,0 +1,263 @@
+/* =====================================================
+   AgentHub — Unified Design Tokens (Phase 1)
+   Dark premium theme with indigo accent
+   ===================================================== */
+
+:root {
+    /* ── Surfaces ───────────────────────────────────────── */
+    --surface-0: #08090c;          /* page background */
+    --surface-1: #0f1014;          /* cards / panels */
+    --surface-2: #17181d;          /* modals, popovers */
+    --surface-3: #1e1f25;          /* elevated hover, input bg */
+    --surface-4: #262730;          /* hover on surface-3 */
+    --surface-inverse: #f4f4f7;    /* for light-on-dark flip cases */
+
+    /* ── Borders ────────────────────────────────────────── */
+    --border-subtle: rgba(255, 255, 255, 0.06);
+    --border-default: rgba(255, 255, 255, 0.10);
+    --border-strong: rgba(255, 255, 255, 0.18);
+    --border-focus: var(--accent);
+
+    /* ── Text ───────────────────────────────────────────── */
+    --text-1: #f4f4f7;             /* primary */
+    --text-2: #b8b9c0;             /* secondary */
+    --text-3: #72737a;             /* muted / placeholder */
+    --text-4: #4a4b52;             /* disabled */
+    --text-on-accent: #ffffff;
+
+    /* ── Accent (Blue — Phase 16.15) ──────────────────────
+       Switched from indigo (#6366f1) to blue (#3b82f6) so the whole UI
+       reads as "black + blue" / "white + blue". All legacy --purple and
+       rgba(167,139,250,*) refs alias here automatically. */
+    --accent: #3b82f6;                          /* blue-500 */
+    --accent-hover: #60a5fa;                    /* blue-400, lighter for hover on dark bg */
+    --accent-active: #2563eb;                   /* blue-600, pressed state */
+    --accent-weak: rgba(59, 130, 246, 0.14);
+    --accent-weaker: rgba(59, 130, 246, 0.07);
+    --accent-ring: rgba(59, 130, 246, 0.35);
+    --accent-rgb: 59, 130, 246;                 /* for inline rgba() concatenation */
+    --accent-soft-bg: rgba(59, 130, 246, 0.08);
+    --accent-soft-border: rgba(59, 130, 246, 0.30);
+
+    /* ── Semantic colors ────────────────────────────────── */
+    --success: #10b981;
+    --success-weak: rgba(16, 185, 129, 0.14);
+    --success-hover: #34d399;
+
+    --warning: #f59e0b;
+    --warning-weak: rgba(245, 158, 11, 0.14);
+    --warning-hover: #fbbf24;
+
+    --danger: #ef4444;
+    --danger-weak: rgba(239, 68, 68, 0.14);
+    --danger-hover: #f87171;
+
+    --info: #3b82f6;
+    --info-weak: rgba(59, 130, 246, 0.14);
+    --info-hover: #60a5fa;
+
+    /* ── Gradients (blue family, no purple) ─────────────── */
+    --grad-accent: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    --grad-accent-soft: linear-gradient(135deg, rgba(59, 130, 246, 0.18) 0%, rgba(29, 78, 216, 0.12) 100%);
+    --grad-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --grad-danger: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+    --grad-surface: linear-gradient(180deg, #0f1014 0%, #08090c 100%);
+
+    /* ── Spacing (4pt grid) ─────────────────────────────── */
+    --space-0: 0;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 32px;
+    --space-8: 40px;
+    --space-9: 48px;
+    --space-10: 64px;
+    --space-11: 80px;
+    --space-12: 96px;
+
+    /* ── Radius ─────────────────────────────────────────── */
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --radius-2xl: 28px;
+    --radius-full: 9999px;
+
+    /* ── Shadows ────────────────────────────────────────── */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.55);
+    --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.6);
+    --shadow-xl: 0 24px 64px rgba(0, 0, 0, 0.65);
+    --shadow-ring: 0 0 0 3px var(--accent-ring);
+    --shadow-glow: 0 0 32px rgba(59, 130, 246, 0.18);
+
+    /* ── Typography ─────────────────────────────────────── */
+    --font-sans: 'Inter', 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, Consolas, monospace;
+
+    --text-xs: 11px;
+    --text-sm: 12px;
+    --text-base: 14px;
+    --text-md: 15px;
+    --text-lg: 17px;
+    --text-xl: 20px;
+    --text-2xl: 24px;
+    --text-3xl: 30px;
+    --text-4xl: 36px;
+
+    --leading-tight: 1.25;
+    --leading-snug: 1.4;
+    --leading-normal: 1.55;
+    --leading-relaxed: 1.7;
+
+    --weight-regular: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600;
+    --weight-bold: 700;
+
+    /* ── Motion ─────────────────────────────────────────── */
+    --duration-fast: 120ms;
+    --duration-base: 180ms;
+    --duration-slow: 280ms;
+    --duration-slower: 420ms;
+
+    --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* ── Z-index scale ──────────────────────────────────── */
+    --z-base: 1;
+    --z-dropdown: 100;
+    --z-sticky: 200;
+    --z-header: 300;
+    --z-overlay: 800;
+    --z-modal: 900;
+    --z-toast: 1000;
+    --z-tooltip: 1100;
+
+    /* ── Layout ─────────────────────────────────────────── */
+    --sidebar-w: 260px;
+    --sidebar-w-collapsed: 72px;
+    --topbar-h: 60px;
+    --content-max: 1400px;
+    --container-pad: var(--space-6);
+
+    /* ── Focus ring ─────────────────────────────────────── */
+    --focus-ring: 0 0 0 3px var(--accent-ring);
+}
+
+/* ── Light theme (Phase 16.15 / 16.18) ──────────────────
+   "White + blue" — page bg is a soft cool grey (eye-friendly, not
+   blinding white). Cards/modals step up in lightness to read as
+   elevated above the page. */
+:root[data-theme="light"] {
+    --surface-0: #e3e7ef;                       /* page background — soft cool grey, dialed down */
+    --surface-1: #f0f3f8;                       /* cards / panels — off-white, sits above page */
+    --surface-2: #f7f9fc;                       /* modals, popovers — lightest (focal) */
+    --surface-3: #dde2eb;                       /* input bg / muted surface */
+    --surface-4: #ced4e0;                       /* hover on surface-3 */
+    --surface-inverse: #0b0c10;
+
+    --border-subtle: rgba(15, 23, 42, 0.06);
+    --border-default: rgba(15, 23, 42, 0.10);
+    --border-strong: rgba(15, 23, 42, 0.18);
+
+    /* Phase 16.16: tighter text scale for light mode — the previous
+       slate-500/600 felt washed out on the cool near-white background.
+       Bumped each tier one shade darker so even text-4 (muted) stays
+       readable on #f5f7fb. */
+    --text-1: #0b0c10;       /* slate-950   — primary */
+    --text-2: #1e293b;       /* slate-800   — secondary, near-black */
+    --text-3: #475569;       /* slate-600   — muted but still readable */
+    --text-4: #64748b;       /* slate-500   — placeholder / disabled */
+    --text-on-accent: #ffffff;
+
+    /* Accent — darker blue (#2563eb) for stronger contrast on white */
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-active: #1e40af;
+    --accent-weak: rgba(37, 99, 235, 0.10);
+    --accent-weaker: rgba(37, 99, 235, 0.05);
+    --accent-ring: rgba(37, 99, 235, 0.30);
+    --accent-rgb: 37, 99, 235;
+    --accent-soft-bg: rgba(37, 99, 235, 0.06);
+    --accent-soft-border: rgba(37, 99, 235, 0.25);
+
+    --grad-accent: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    --grad-accent-soft: linear-gradient(135deg, rgba(37, 99, 235, 0.14) 0%, rgba(29, 78, 216, 0.08) 100%);
+    --grad-surface: linear-gradient(180deg, #f0f3f8 0%, #e3e7ef 100%);
+
+    --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.06);
+    --shadow-sm: 0 2px 6px rgba(16, 24, 40, 0.08);
+    --shadow-md: 0 6px 16px rgba(16, 24, 40, 0.10);
+    --shadow-lg: 0 16px 40px rgba(16, 24, 40, 0.14);
+    --shadow-xl: 0 24px 64px rgba(16, 24, 40, 0.18);
+    --shadow-glow: 0 0 32px rgba(37, 99, 235, 0.20);
+}
+
+/* Scrollbar in light mode — needs visible-on-white treatment */
+:root[data-theme="light"] *::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.18);
+}
+:root[data-theme="light"] *::-webkit-scrollbar-thumb:hover {
+    background: rgba(15, 23, 42, 0.30);
+}
+
+/* ── Respect reduced motion ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --duration-fast: 0ms;
+        --duration-base: 0ms;
+        --duration-slow: 0ms;
+        --duration-slower: 0ms;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ── Selection ──────────────────────────────────────────── */
+::selection {
+    background: var(--accent-weak);
+    color: var(--text-1);
+}
+
+/* ── Scrollbar (dark) ───────────────────────────────────── */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface-4) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--surface-4);
+    border-radius: var(--radius-full);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--border-strong);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+}

@@ -1,0 +1,120 @@
+SAP TRANSACTION CODES — PetabyteAi SAP Knowledge Base
+======================================================
+Version: S/4HANA 2023
+
+## ABAP DEVELOPMENT
+
+| T-Code | Description |
+|--------|-------------|
+| SE38   | ABAP Editor — create/edit programs |
+| SE80   | Object Navigator — organize development objects |
+| SE24   | Class Builder — create ABAP OO classes |
+| SE37   | Function Builder — create function modules |
+| SE11   | Data Dictionary — tables, structures, domains |
+| SE16   | Data Browser — view table contents |
+| SE16N  | General Table Display (improved SE16) |
+| SM30   | View Maintenance — customize table entries |
+| SE93   | Transaction Code Maintenance |
+| SSCR   | SAP Object Registration key |
+| SE09   | Transport Organizer — manage transports |
+| SE10   | Transport Organizer (workbench) |
+| SA38   | Run ABAP Program |
+| SE91   | Message Maintenance |
+| SMARTFORMS | Smart Forms designer |
+| SE71   | SAPscript Form Painter |
+
+## DEBUGGING & MONITORING
+
+| T-Code | Description |
+|--------|-------------|
+| ST22   | ABAP Short Dump Analysis |
+| SM21   | System Log |
+| SM50   | Work Process Overview |
+| SM66   | Global Work Process Overview |
+| AL11   | SAP Directory |
+| SM37   | Background Job Overview |
+| SM36   | Define Background Job |
+| ST05   | Performance Trace (SQL trace) |
+| SM13   | Update Record Analysis |
+| SM12   | Lock Entry List |
+| STAD   | Business Transaction Analysis |
+| SM51   | Application Servers List |
+
+## FINANCE (FI)
+
+| T-Code | Description |
+|--------|-------------|
+| FB01   | Post Document |
+| FB60   | Enter Vendor Invoice |
+| FB70   | Enter Customer Invoice |
+| F-02   | General Posting |
+| F-03   | Clear G/L Account |
+| FK01   | Create Vendor |
+| FD01   | Create Customer |
+| FS00   | G/L Account Master |
+| F.01   | Financial Statements |
+| F110   | Automatic Payment Run |
+| MIRO   | Logistics Invoice Verification |
+
+## MATERIALS MANAGEMENT (MM)
+
+| T-Code | Description |
+|--------|-------------|
+| MM01   | Create Material Master |
+| MM02   | Change Material Master |
+| MM03   | Display Material Master |
+| ME21N  | Create Purchase Order |
+| ME22N  | Change Purchase Order |
+| ME23N  | Display Purchase Order |
+| MIGO   | Goods Movement |
+| MB51   | Material Document List |
+| ME2M   | Purchase Orders by Material |
+| ME5A   | Purchase Requisitions |
+| ML81N  | Service Entry Sheet |
+
+## SALES & DISTRIBUTION (SD)
+
+| T-Code | Description |
+|--------|-------------|
+| VA01   | Create Sales Order |
+| VA02   | Change Sales Order |
+| VA03   | Display Sales Order |
+| VF01   | Create Billing Document |
+| VF02   | Change Billing Document |
+| VF03   | Display Billing Document |
+| VK11   | Create Condition Record (pricing) |
+| VL01N  | Create Outbound Delivery |
+| VT01N  | Create Shipment |
+| XD01   | Create Customer (full) |
+
+## HUMAN RESOURCES (HR)
+
+| T-Code | Description |
+|--------|-------------|
+| PA30   | Maintain HR Master Data |
+| PA20   | Display HR Master Data |
+| PT01   | Create Work Schedule Rule |
+| PE01   | Payroll Schemas |
+| PPOME  | Organization and Staffing |
+
+## PRODUCTION PLANNING (PP)
+
+| T-Code | Description |
+|--------|-------------|
+| CS01   | Create Bill of Material |
+| CA01   | Create Routing |
+| MD01   | Run MRP |
+| CO01   | Create Production Order |
+| CO11N  | Production Order Confirmation |
+
+## SYSTEM ADMINISTRATION
+
+| T-Code | Description |
+|--------|-------------|
+| SU01   | User Maintenance |
+| SU24   | Authorization Check Maintenance |
+| PFCG   | Role Maintenance |
+| RZ10   | Instance Profile Maintenance |
+| SM59   | RFC Destinations |
+| BD54   | Logical Systems |
+| WE20   | Partner Profiles (EDI/IDoc) |

@@ -1,0 +1,191 @@
+ABAP ERROR PATTERNS & SHORT DUMPS — PetabyteAi SAP Knowledge Base
+==================================================================
+S/4HANA 2023
+
+## 1. COMMON SHORT DUMP TYPES (ST22)
+
+### FIELD_SYMBOL_NOT_ASSIGNED
+Cause: Accessing a field symbol before it is assigned.
+
+BAD:
+  FIELD-SYMBOLS <fs_data> TYPE any.
+  "... forget to ASSIGN
+  WRITE <fs_data>.  "→ FIELD_SYMBOL_NOT_ASSIGNED
+
+GOOD:
+  FIELD-SYMBOLS <fs_data> TYPE any.
+  ASSIGN COMPONENT 'MATNR' OF STRUCTURE ls_mara TO <fs_data>.
+  IF <fs_data> IS ASSIGNED.
+    WRITE <fs_data>.
+  ENDIF.
+
+---
+
+### RAISE_EXCEPTION (Unhandled Exception)
+Cause: cx_... exception raised but not caught.
+
+BAD:
+  lv_result = 100 / lv_divisor.  "if lv_divisor = 0 → cx_sy_zerodivide
+
+GOOD:
+  TRY.
+    lv_result = 100 / lv_divisor.
+  CATCH cx_sy_zerodivide.
+    lv_result = 0.
+    MESSAGE 'Cannot divide by zero' TYPE 'W'.
+  ENDTRY.
+
+---
+
+### GETWA_NOT_ASSIGNED
+Cause: Work area not assigned — usually from READ TABLE without check.
+
+BAD:
+  READ TABLE lt_mara INTO ls_mara WITH KEY matnr = 'X'.
+  WRITE ls_mara-mtart.  "may crash if not found
+
+GOOD (traditional):
+  READ TABLE lt_mara INTO ls_mara WITH KEY matnr = 'X'.
+  IF sy-subrc = 0.
+    WRITE ls_mara-mtart.
+  ENDIF.
+
+GOOD (modern with OPTIONAL):
+  DATA(ls_mara) = VALUE #( lt_mara[ matnr = 'X' ] OPTIONAL ).
+  IF ls_mara IS NOT INITIAL.
+    WRITE ls_mara-mtart.
+  ENDIF.
+
+---
+
+### ITAB_DUPLICATE_KEY
+Cause: Inserting duplicate entry into SORTED or HASHED table.
+
+BAD:
+  DATA lt_hashed TYPE HASHED TABLE OF ty_data WITH UNIQUE KEY matnr.
+  INSERT VALUE #( matnr = '100' text = 'First' ) INTO TABLE lt_hashed.
+  INSERT VALUE #( matnr = '100' text = 'Dup' ) INTO TABLE lt_hashed.  "→ crash
+
+GOOD:
+  INSERT VALUE #( matnr = '100' text = 'First' ) INTO TABLE lt_hashed.
+  IF sy-subrc <> 0.
+    MESSAGE 'Duplicate key' TYPE 'W'.
+  ENDIF.
+
+---
+
+### MEMORY_NO_MORE_PAGING
+Cause: Huge internal table filling memory.
+
+GOOD:
+  "1. Select only needed fields
+  SELECT matnr mtart FROM mara WHERE mtart = 'ROH' INTO TABLE @lt_mara.
+  
+  "2. Use PACKAGE SIZE for large reads
+  SELECT matnr FROM mara INTO TABLE @DATA(lt_package) PACKAGE SIZE 1000.
+    "process lt_package
+  ENDSELECT.
+  
+  "3. FREE table when done
+  FREE lt_big_table.
+
+---
+
+### CONNE_IMPORT_WRONG_OBJECT / RFC Errors
+Cause: Type mismatch in RFC parameters.
+
+GOOD:
+  "Always use exact types from function module interface:
+  DATA: lv_matnr TYPE bapi_matinr-material,  "not just char18
+        lt_return TYPE bapiret2_t.
+
+---
+
+## 2. RUNTIME ERRORS — ABAP OO
+
+### CX_SY_REF_IS_INITIAL (Null Reference)
+Cause: Calling method on undefined object reference.
+
+BAD:
+  DATA lo_util TYPE REF TO zcl_utility.
+  lo_util->do_something( ).  "→ CX_SY_REF_IS_INITIAL
+
+GOOD:
+  DATA lo_util TYPE REF TO zcl_utility.
+  CREATE OBJECT lo_util.
+  lo_util->do_something( ).
+  
+  "or inline:
+  DATA(lo_util) = NEW zcl_utility( ).
+  lo_util->do_something( ).
+
+---
+
+### CX_SY_DYNAMIC_OSQL_SEMANTICS
+Cause: Invalid dynamic WHERE clause.
+
+BAD:
+  DATA lv_where TYPE string VALUE 'matnr EQ ''X'''.
+  SELECT * FROM mara WHERE (lv_where) INTO TABLE @lt_result.
+
+GOOD:
+  DATA lv_where TYPE string VALUE `matnr = 'X'`.
+  SELECT * FROM mara WHERE (lv_where) INTO TABLE @lt_result.
+
+---
+
+## 3. AUTHORIZATION ERRORS
+
+### SU53 — Check what auth failed
+Transaction SU53 shows which authorization object failed.
+
+Common auth objects:
+- S_TCODE     — Transaction code access
+- S_TABU_DIS  — Table display access
+- M_MSEG_BWA  — Goods movement type
+- V_VBAK_VKO  — Sales area access
+
+ABAP Check:
+  AUTHORITY-CHECK OBJECT 'M_MSEG_BWA'
+    ID 'BWART' FIELD '101'
+    ID 'ACTVT' FIELD '01'.
+  IF sy-subrc <> 0.
+    MESSAGE 'No authorization for goods receipt' TYPE 'E'.
+  ENDIF.
+
+---
+
+## 4. TRANSPORT ERRORS
+
+### ITNO_OBJECT_LOCKED
+Cause: Object locked by another transport.
+
+Solution:
+  1. SE09 → find transport with lock
+  2. Release conflicting tasks
+  3. Or use SSCR to grab key
+
+### ERROR_IN_ACTIVATION
+Cause: Syntax error or type conflict after transport.
+
+Check:
+  1. SE38 → activate manually
+  2. Review syntax check output
+  3. Often due to missing dependent objects
+
+---
+
+## 5. DEBUGGING TIPS
+
+### Set Breakpoint in SE38
+  BREAK-POINT.        "always stops
+  BREAK username.     "stops only for specific user
+  
+### Watch Variable
+  In debugger → Watchpoint → enter variable name
+
+### SQL Trace (ST05)
+  1. ST05 → Activate Trace
+  2. Run transaction
+  3. ST05 → Deactivate + Display Trace
+  4. Look for expensive queries (high duration, high records)

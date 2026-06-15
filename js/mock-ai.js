@@ -9,11 +9,23 @@ const MockAI = {
      * @param {string} skillId
      * @param {string} prompt
      * @param {Function} onChunk - called with each text chunk (streaming effect)
-     * @param {Function} onDone - called when complete with { inputTokens, outputTokens, durationMs }
+     * @param {Function} onDone - called when complete with
+     *        { inputTokens, outputTokens, cost, durationMs, sessionId, stopped }
+     *        Phase 19.3: shape now matches what _streamFromBackend emits, so
+     *        the caller (sendMessage) doesn't see `result.stopped === undefined`
+     *        and incorrectly flash "✅ เสร็จแล้ว" when the user pressed Stop.
      */
     async run(skillId, prompt, onChunk, onDone) {
         const skill = PRICING.skills.find(s => s.id === skillId);
-        if (!skill) return;
+        if (!skill) {
+            // Phase 19.3: still call onDone with a consistent shape so the UI
+            // doesn't hang in "isRunning" forever on an unknown skill.
+            await onDone({
+                inputTokens: 0, outputTokens: 0, cost: 0,
+                durationMs: 0, sessionId: null, stopped: false,
+            });
+            return;
+        }
 
         const startTime = Date.now();
 
@@ -27,6 +39,14 @@ const MockAI = {
         // Estimate output tokens
         const outputTokens = PRICING.estimateTokens(mockText);
 
+        // Estimate cost using PRICING so the UI shows realistic numbers.
+        let cost = 0;
+        try {
+            if (typeof PRICING.calcCost === 'function') {
+                cost = PRICING.calcCost(inputTokens, outputTokens);
+            }
+        } catch (e) { /* swallow — cost is informational only */ }
+
         // Simulate thinking delay (500–1200ms)
         await this._delay(500 + Math.random() * 700);
 
@@ -34,7 +54,10 @@ const MockAI = {
         await this._streamText(mockText, onChunk, 18);
 
         const durationMs = Date.now() - startTime;
-        await onDone({ inputTokens, outputTokens, durationMs });
+        await onDone({
+            inputTokens, outputTokens, cost,
+            durationMs, sessionId: null, stopped: false,
+        });
     },
 
     /**

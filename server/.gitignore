@@ -1,2 +1,10 @@
 node_modules/
 .env
+.env.local
+.env.production
+
+# local smoke-test / dump artifacts
+schema-dump.*
+*.log
+backups/
+logs/

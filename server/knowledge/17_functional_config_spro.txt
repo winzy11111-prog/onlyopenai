@@ -1,0 +1,217 @@
+SAP FUNCTIONAL CONFIGURATION (SPRO / IMG) — PetabyteAi KB
+==========================================================
+Version: S/4HANA 2023
+
+## OVERVIEW
+
+**SPRO** = SAP Project Reference Object = the Implementation Guide (IMG).
+Functional consultants configure SAP modules through SPRO — no coding,
+but changes are recorded in **Customizing requests** and transported.
+
+Developers should understand **enough** SPRO to:
+1. Find where a behavior is configured (e.g. number ranges, pricing, output)
+2. Add enhancements at the right layer (User Exit vs BAdI vs Enhancement Spot)
+3. Know which **customizing tables** (T-tables) back which settings
+
+## NAVIGATING SPRO
+
+1. Tx `SPRO` → "SAP Reference IMG" button
+2. Expand tree: **SAP Customizing Implementation Guide → <Module> → …**
+3. Click the **activity** (clock icon) to jump to the config screen
+4. Use **Activity Info** (📘) to read SAP docs for that node
+5. Use search: `Utilities → Find` with keyword
+
+## ENTERPRISE STRUCTURE (foundation)
+
+Before any config, the org structure must exist:
+
+| Element | T-Code | Purpose |
+|---------|--------|---------|
+| Company Code | OX02 | Smallest unit with balanced books (FI) |
+| Plant        | OX10 | Operating location (MM/PP) |
+| Storage Location | OX09 | Sub-plant inventory bucket |
+| Sales Org    | OVX5 | Responsible for sales |
+| Distribution Channel | OVXI | Wholesale/retail/internet |
+| Division     | OVXB | Product grouping |
+| Purchasing Org | OX08 | Purchasing entity |
+| Controlling Area | OKKP | Cost accounting unit |
+| Business Area | OX03 | Internal reporting (optional in S/4) |
+| Profit Center | KE51 | Internal profitability |
+| Segment      | — | For segment reporting (IFRS 8) |
+
+### Assignments (equally critical)
+- Company Code → Controlling Area (OX19)
+- Plant → Company Code (OX18)
+- Sales Org → Company Code (OVX3)
+- Plant → Sales Org/DC (OVX6)
+- Purchasing Org → Plant (OX17)
+
+## FI CONFIGURATION HIGHLIGHTS
+
+| Activity | T-Code / SPRO Path |
+|----------|---------------------|
+| Chart of Accounts | OB13 |
+| Fiscal Year Variant | OB29 |
+| Posting Period Variant | OBBO |
+| Field Status Variant | OBC4 |
+| Document Types | OBA7 |
+| Number Range (FI) | FBN1 |
+| Tax Codes | FTXP |
+| Bank Master | FI12 |
+| Reconciliation Accounts | OBXY |
+| Automatic Account Determination | OBYC (MM-FI), VKOA (SD-FI) |
+| Tolerance Groups | OBA4 |
+| Open Item Management | by G/L master FS00 |
+| Asset Accounting | OADB, AS01 |
+
+## MM CONFIGURATION HIGHLIGHTS
+
+| Activity | T-Code |
+|----------|--------|
+| Material Types | OMS2 |
+| Material Groups | OMSF |
+| Number Ranges (Material) | MMNR |
+| Purchase Org / Plant assignment | OX17 |
+| Document Types (PO) | OMEC |
+| Release Strategy (PR/PO) | OMGSCK / OMGSPO |
+| Account Determination (OBYC) | OBYC |
+| Movement Types customization | OMJJ |
+| Output Determination (NAST) | NACE (new: BRF+/Output Mgmt) |
+| Valuation Class per Material Type | OMS2 |
+| Pricing Schema (Purchasing) | M/08 |
+
+## SD CONFIGURATION HIGHLIGHTS
+
+| Activity | T-Code |
+|----------|--------|
+| Sales Org / DC / Div setup | OVX5/OVXI/OVXB |
+| Sales Doc Types | VOV8 |
+| Item Categories | VOV7 |
+| Schedule Line Categories | VOV6 |
+| Copy Control (Order→Delivery→Billing) | VTAA, VTLA, VTFA, VTFL |
+| Pricing Procedure | V/08 |
+| Condition Types | V/06 |
+| Access Sequences | V/07 |
+| Partner Determination | VOPA |
+| Output Determination | NACE |
+| Account Determination (SD-FI) | VKOA |
+| Credit Management (FSCM) | OB45/OB01 |
+
+## CO CONFIGURATION HIGHLIGHTS
+
+| Activity | T-Code |
+|----------|--------|
+| Controlling Area | OKKP |
+| Number Ranges CO | KANK |
+| Primary Cost Elements (S/4: merged with G/L) | KA01 / FS00 |
+| Cost Centers | KS01 |
+| Internal Orders | KO01 |
+| Activity Types | KL01 |
+| Statistical Key Figures | KK01 |
+| Profit Center | KE51 |
+| CO-PA Operating Concern | KEA0 |
+| Assessment / Distribution | KSU1 / KSV1 |
+
+## HR / SUCCESSFACTORS BASICS
+
+*S/4HANA Core HR (on-prem) is "simplified"; for full HCM use SuccessFactors.*
+
+| Module | Key tables |
+|--------|-----------|
+| PA (Personnel Admin) | PA0000–PA9999 infotype tables |
+| OM (Org Mgmt) | HRP1000, HRP1001 |
+| PT (Time) | PA2000-series, TEVEN |
+| PY (Payroll) | cluster tables (PCL1, PCL2, PCL4) |
+
+| T-Code | Purpose |
+|--------|---------|
+| PA20   | Display HR Master Data (infotypes) |
+| PA30   | Maintain HR Master Data |
+| PA40   | Personnel Actions |
+| PP01   | Maintain Org Objects |
+| PPOME  | Org & Staffing (graphical) |
+| PO13   | Maintain Position |
+| PO10   | Maintain Org Unit |
+| PE51   | HR Forms |
+| SM30   | V_T7* tables for HR config |
+
+## ENHANCEMENT TECHNIQUES (for functional → technical handoff)
+
+### Pyramid (newest first)
+1. **BAdI (Business Add-In)** — OO-based, multi-implementation.
+   Tx: **SE18** (defn) / **SE19** (impl).
+2. **Enhancement Spots / Implicit Enhancements** — explicit source-code hooks.
+3. **Customer Exit (CMOD / SMOD)** — legacy, still works. Function modules `EXIT_*`.
+4. **User Exit** — form routines (SD: USEREXIT_MOVE_FIELD_TO_VBAK in MV45AFZZ).
+5. **Modification** — direct source edit (requires SSCR key, logged in CMOD).
+
+Rule: **BAdI > Enhancement > Customer Exit > User Exit > Modification**
+Prefer higher tiers; lower tiers are upgrade-risky.
+
+### Finding the Right BAdI
+```abap
+" Put breakpoint in CL_EXITHANDLER=>GET_INSTANCE
+" Run the transaction — every BAdI lookup stops here
+" Check parameter EXIT_NAME to see what's called
+```
+
+Or use tx `SE84` → "Business Add-Ins" → search by text.
+
+## NUMBER RANGES
+
+Central authority: **SNRO** (number range object).
+Each doc type usually has its own range group + intervals.
+
+| Object | Where Configured |
+|--------|------------------|
+| RF_BELEG | FI doc (per CoCode + year) — FBN1 |
+| EBELEG   | PO — OMH6 |
+| RV_BELEG | SD doc — VN01 |
+| MATERIALNR | Material — MMNR |
+| DEBITOR / KREDITOR | BP/customer/vendor — XDN1/XKN1 |
+
+## OUTPUT MANAGEMENT
+
+### Classic NAST / Condition-Based Output
+- Tx `NACE` — application + output type + condition records
+- Print program + SmartForm/SAPscript link
+- Triggered via **NAST** table entries + RSNAST00
+
+### Modern (S/4 1709+): Output Management
+- **Adobe Forms** or **Margin print**
+- Configured via **BRF+** decision tables
+- SPRO: *Cross-Application Components → Output Control*
+- Adoption: SAP strongly recommends for new dev
+
+## TRANSPORT OF CUSTOMIZING
+
+- Customizing requests are **client-specific** (unlike Workbench requests).
+- Check target client in **SCC4** — must allow customizing changes.
+- View request contents: SE10 → double-click request → objects.
+- Some entries only transport via **manual SM30 transport** button or via
+  **BC Set** (tx `SCPR3`).
+
+## COMMON FUNCTIONAL ERROR PATTERNS
+
+| Symptom | Usually caused by |
+|---------|-------------------|
+| "No posting period variant" | OBBO missing / period closed |
+| "Account XXX not allowed for doc type" | OBA7 field status vs FS00 mismatch |
+| "No account assignment possible" | OBYC missing key for valuation class |
+| "Pricing error mandatory condition XR1 missing" | V/08 or master record VK11 not maintained |
+| "No authorization for company code" | PFCG role missing F_BKPF_BUK |
+| "Output type determined, no printer assigned" | NACE condition record missing output device |
+| "Update terminated" (SM13) | Config inconsistency or commit after custom BAPI — check update dump in SM13 |
+
+## WHEN DEV TALKS TO FUNCTIONAL CONSULTANT
+
+Ask **four questions** before changing anything:
+1. **Which SPRO node?** (ask them to open and show path)
+2. **Which transport?** (cust vs workbench)
+3. **Which tables?** (so you can read defaults in code)
+4. **Which enhancement point exists?** (BAdI > User Exit) — avoid modification
+
+For any "we need to add a field", confirm:
+- Append structure on standard table (dictionary-level) **or** CI_* include
+- Screen enhancement via screen exit / Web Dynpro extension / RAP extension
+- Data flow: is it persisted (DB), calculated (CDS), or display-only (UI)?

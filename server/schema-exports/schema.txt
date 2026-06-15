@@ -1,0 +1,202 @@
+═════════════════════════════════════════
+PetabyteAi DB — schema snapshot 2026-05-11T10:35:38.527Z
+═════════════════════════════════════════
+
+
+📋 tbl_acc_status
+──────────────────────────────────────────────────
+  🔑     acc_status_id                integer                      NOT NULL
+         acc_status                   character varying            NOT NULL
+
+📋 tbl_action_admin
+──────────────────────────────────────────────────
+  🔗 → tbl_user.user_id user_id                      integer                      NOT NULL
+         project_id                   character varying            NULL
+         role_id                      integer                      NOT NULL
+         edit_date                    date                         NOT NULL
+         edit_time                    timestamp without time zone  NOT NULL
+  🔑     id                           bigint                       NOT NULL
+         action_type                  character varying            NULL
+         target_type                  character varying            NULL
+         target_id                    integer                      NULL
+         change_json                  jsonb                        NULL
+   Indexes:
+     - idx_action_admin_target
+     - idx_action_admin_type
+     - idx_action_admin_user_date
+     - idx_action_admin_user_time
+
+📋 tbl_audit_log
+──────────────────────────────────────────────────
+  🔗 → tbl_user.user_id user_id                      integer                      NULL
+         log_in_date                  date                         NOT NULL
+         log_in_time                  timestamp without time zone  NOT NULL
+         log_out_date                 date                         NULL
+         log_out_time                 timestamp without time zone  NULL
+  🔑     id                           bigint                       NOT NULL
+         event_type                   character varying            NULL
+         detail                       jsonb                        NULL
+         ip                           character varying            NULL
+   Indexes:
+     - idx_audit_log_event
+     - idx_audit_log_user_time
+
+📋 tbl_balance
+──────────────────────────────────────────────────
+  🔑     project_id                   character varying            NOT NULL
+         project_credits              numeric                      NOT NULL
+         top_up_date                  date                         NOT NULL
+         top_up_time                  timestamp without time zone  NOT NULL
+         user_id                      integer                      NOT NULL
+
+📋 tbl_chat_message
+──────────────────────────────────────────────────
+  🔑     message_id                   bigint                       NOT NULL
+  🔗 → tbl_chat_session.session_id session_id                   bigint                       NOT NULL
+         role                         character varying            NOT NULL
+         content                      text                         NOT NULL
+         created_at                   timestamp with time zone     NOT NULL
+         input_tokens                 integer                      NULL
+         output_tokens                integer                      NULL
+         cost                         numeric                      NULL
+         model                        character varying            NULL
+         skill_id                     character varying            NULL
+   Indexes:
+     - idx_chat_message_session_created
+
+📋 tbl_chat_session
+──────────────────────────────────────────────────
+  🔑     session_id                   bigint                       NOT NULL
+  🔗 → tbl_user.user_id user_id                      integer                      NOT NULL
+         title                        character varying            NOT NULL
+         created_at                   timestamp with time zone     NOT NULL
+         updated_at                   timestamp with time zone     NOT NULL
+         is_deleted                   boolean                      NOT NULL
+         message_count                integer                      NOT NULL
+         total_cost                   numeric                      NOT NULL
+   Indexes:
+     - idx_chat_session_user_updated
+
+📋 tbl_credits
+──────────────────────────────────────────────────
+  🔑     user_id                      integer                      NOT NULL
+  🔗 → tbl_balance.project_id project_id                   character varying            NOT NULL
+         user_credits                 numeric                      NOT NULL
+   Indexes:
+     - idx_credits_project
+
+📋 tbl_daily_token
+──────────────────────────────────────────────────
+  🔑     usage_date_th                date                         NOT NULL
+         project_id                   character varying            NOT NULL
+         start_time_th                bigint                       NOT NULL
+         end_time_th                  bigint                       NOT NULL
+         start_time_utc               bigint                       NOT NULL
+         end_time_utc                 bigint                       NOT NULL
+         model                        character varying            NOT NULL
+         input_tokens                 integer                      NOT NULL
+         output_tokens                integer                      NOT NULL
+         input_cached_tokens          integer                      NOT NULL
+         input_uncached_tokens        integer                      NOT NULL
+         input_text_tokens            integer                      NOT NULL
+         output_text_tokens           integer                      NOT NULL
+         input_cached_text_tokens     integer                      NOT NULL
+         input_audio_tokens           integer                      NOT NULL
+         input_cached_audio_tokens    integer                      NOT NULL
+         output_audio_tokens          integer                      NOT NULL
+         input_image_tokens           integer                      NOT NULL
+         output_image_tokens          integer                      NOT NULL
+
+📋 tbl_project
+──────────────────────────────────────────────────
+  🔑     project_id                   character varying            NOT NULL
+         project_name                 character varying            NOT NULL
+         project_api_key              text                         NULL
+         admin_api_key                text                         NULL
+         created_date                 date                         NOT NULL
+         description                  text                         NULL
+         input_rate                   numeric                      NULL
+         output_rate                  numeric                      NULL
+         credit_limit                 numeric                      NULL
+         is_deleted                   boolean                      NOT NULL
+         deleted_at                   timestamp with time zone     NULL
+         openai_project_id            character varying            NULL
+         openai_service_account_id    character varying            NULL
+         openai_synced_at             timestamp with time zone     NULL
+         cached_input_rate            numeric                      NULL
+   Indexes:
+     - idx_project_active
+     - ux_tbl_project_openai_project_id
+
+📋 tbl_response
+──────────────────────────────────────────────────
+  🔑     response_id                  character varying            NOT NULL
+  🔗 → tbl_project.project_id project_id                   character varying            NOT NULL
+         model                        character varying            NOT NULL
+         created_at                   timestamp without time zone  NOT NULL
+         input_param                  text                         NOT NULL
+         output_param                 text                         NOT NULL
+         input_tokens                 integer                      NOT NULL
+         input_cached_tokens          integer                      NOT NULL
+         output_tokens                integer                      NOT NULL
+         output_reasoning_tokens      integer                      NOT NULL
+         total_tokens                 integer                      NOT NULL
+  🔗 → tbl_user.user_id user_id                      integer                      NULL
+   Indexes:
+     - idx_response_project_created
+     - idx_response_user_created
+
+📋 tbl_session
+──────────────────────────────────────────────────
+  🔑     token                        character varying            NOT NULL
+  🔗 → tbl_user.user_id user_id                      integer                      NOT NULL
+         role                         character varying            NOT NULL
+         expires_at                   timestamp with time zone     NOT NULL
+         created_at                   timestamp with time zone     NOT NULL
+         last_seen_at                 timestamp with time zone     NOT NULL
+         csrf_token                   character varying            NULL
+   Indexes:
+     - idx_session_expires
+     - idx_session_user
+
+📋 tbl_topup_history
+──────────────────────────────────────────────────
+  🔑     id                           bigint                       NOT NULL
+  🔗 → tbl_project.project_id project_id                   character varying            NOT NULL
+  🔗 → tbl_user.user_id user_id                      integer                      NOT NULL
+         amount                       numeric                      NOT NULL
+         balance_before               numeric                      NOT NULL
+         balance_after                numeric                      NOT NULL
+         note                         text                         NULL
+         created_at                   timestamp with time zone     NOT NULL
+   Indexes:
+     - ix_topup_project_time
+     - ix_topup_user_time
+
+📋 tbl_user
+──────────────────────────────────────────────────
+  🔑     user_id                      integer                      NOT NULL
+  🔗 → tbl_project.project_id project_id                   character varying            NULL
+  🔗 → tbl_user_role.role_id role_id                      integer                      NOT NULL
+         username                     character varying            NOT NULL
+         password                     character varying            NOT NULL
+         name                         character varying            NOT NULL
+         surname                      character varying            NOT NULL
+         created_date                 date                         NOT NULL
+  🔗 → tbl_acc_status.acc_status_id acc_status_id                integer                      NOT NULL
+         is_deleted                   boolean                      NOT NULL
+         deleted_at                   timestamp with time zone     NULL
+         failed_attempts              integer                      NOT NULL
+         locked_until                 timestamp with time zone     NULL
+         must_change_password         boolean                      NOT NULL
+         daily_cap                    numeric                      NULL
+   Indexes:
+     - idx_user_active
+     - idx_user_locked
+     - idx_user_project
+     - tbl_user_username_uniq
+
+📋 tbl_user_role
+──────────────────────────────────────────────────
+  🔑     role_id                      integer                      NOT NULL
+         role_des                     character varying            NOT NULL

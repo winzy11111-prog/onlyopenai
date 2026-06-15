@@ -1,0 +1,143 @@
+FI — FINANCE & ACCOUNTING BAPIs — PetabyteAi SAP Knowledge Base
+================================================================
+Version: S/4HANA 2023
+
+## GENERAL LEDGER POSTING
+
+### BAPI_ACC_DOCUMENT_POST — Post FI Document (Universal)
+Purpose: Post any FI accounting document (replaces FB01 for automation)
+Key Parameters:
+  DOCUMENTHEADER: BUS_ACT (RFBU), USERNAME, COMP_CODE, DOC_DATE, PSTNG_DATE
+  ACCOUNTGL:      ITEMNO_ACC, GL_ACCOUNT, COMP_CODE, DEBIT_CRE (S/H), CURRENCY, AMT_DOCCUR
+  CURRENCYAMOUNT: CURRENCY, AMT_DOCCUR, AMT_BASE
+  RETURN:         Messages
+
+Example:
+  DATA: ls_header   TYPE bapiache09,
+        lt_gl       TYPE TABLE OF bapiacgl09,
+        lt_curr     TYPE TABLE OF bapiaccr09,
+        lt_return   TYPE TABLE OF bapiret2.
+
+  ls_header-bus_act    = 'RFBU'.
+  ls_header-username   = sy-uname.
+  ls_header-comp_code  = '1000'.
+  ls_header-doc_date   = sy-datum.
+  ls_header-pstng_date = sy-datum.
+  ls_header-doc_type   = 'SA'.
+
+  CALL FUNCTION 'BAPI_ACC_DOCUMENT_POST'
+    EXPORTING  documentheader = ls_header
+    TABLES     accountgl      = lt_gl
+               currencyamount = lt_curr
+               return         = lt_return.
+
+  IF NOT lt_return[] IS INITIAL.
+    CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.
+  ELSE.
+    CALL FUNCTION 'BAPI_TRANSACTION_COMMIT' EXPORTING wait = 'X'.
+  ENDIF.
+
+### BAPI_ACC_GL_POSTING_POST — Post G/L Document
+  CALL FUNCTION 'BAPI_ACC_GL_POSTING_POST'
+    EXPORTING  documentheader    = ls_header
+    TABLES     accountgl         = lt_gl
+               currencyamount    = lt_curr
+               return            = lt_return.
+
+### BAPI_INCOMINGINVOICE_CREATE — Post Vendor Invoice (MIRO equivalent)
+  CALL FUNCTION 'BAPI_INCOMINGINVOICE_CREATE'
+    EXPORTING  headerdata    = ls_headerdata
+    TABLES     itemdata      = lt_itemdata
+               return        = lt_return
+    IMPORTING  invoicedocnumber = lv_belnr.
+
+---
+
+## ACCOUNTS PAYABLE (AP)
+
+### BAPI_AP_ACC_DOCUMENT_POST — Post AP Document
+  CALL FUNCTION 'BAPI_AP_ACC_DOCUMENT_POST'
+    EXPORTING  documentheader = ls_header
+    TABLES     accountpayable = lt_ap
+               currencyamount = lt_curr
+               return         = lt_return.
+
+### BAPI_PAYMENT_CREATE — Create Payment Run
+  CALL FUNCTION 'BAPI_PAYMENT_CREATE'
+    EXPORTING  id       = lv_id
+               rundate  = sy-datum
+    TABLES     return   = lt_return.
+
+---
+
+## ACCOUNTS RECEIVABLE (AR)
+
+### BAPI_AR_ACC_DOCUMENT_POST — Post AR Document
+  CALL FUNCTION 'BAPI_AR_ACC_DOCUMENT_POST'
+    EXPORTING  documentheader    = ls_header
+    TABLES     accountreceivable = lt_ar
+               currencyamount    = lt_curr
+               return            = lt_return.
+
+### BAPI_CUSTOMERDEBIT_CREATE — Create Customer Debit Memo
+  CALL FUNCTION 'BAPI_CUSTOMERDEBIT_CREATE'
+    EXPORTING  is_doc_header    = ls_header
+    TABLES     it_doc_items     = lt_items
+               return           = lt_return.
+
+---
+
+## FI DOCUMENT OPERATIONS
+
+### BAPI_FI_DOCUMENT_GET — Get FI Document Details
+  CALL FUNCTION 'BAPI_FI_DOCUMENT_GET'
+    EXPORTING  bukrs = '1000'
+               belnr = lv_belnr
+               gjahr = lv_gjahr
+    TABLES     documentheader = lt_header
+               documentitems  = lt_items
+               return         = lt_return.
+
+### BAPI_FI_DOCUMENT_REVERSE — Reverse FI Document
+  CALL FUNCTION 'BAPI_FI_DOCUMENT_REVERSE'
+    EXPORTING  bukrs        = '1000'
+               belnr        = lv_belnr
+               gjahr        = lv_gjahr
+               reversal_reason = '01'
+               reversal_date   = sy-datum
+    TABLES     return       = lt_return.
+
+---
+
+## KEY FI TRANSACTION CODES
+
+| T-Code | Description |
+|--------|-------------|
+| FB01   | Post Document |
+| FB02   | Change Document |
+| FB03   | Display Document |
+| FB08   | Reverse Document |
+| F-02   | Enter G/L Account Posting |
+| F-53   | Post Outgoing Payment |
+| F-28   | Post Incoming Payment |
+| F110   | Automatic Payment Run |
+| MIRO   | Enter Incoming Invoice |
+| FBL3N  | G/L Account Line Items |
+| FBL1N  | Vendor Line Items |
+| FBL5N  | Customer Line Items |
+| FS10N  | G/L Account Balance |
+
+---
+
+## KEY FI TABLES (S/4HANA)
+
+| Table  | Old (ECC) | Description |
+|--------|-----------|-------------|
+| ACDOCA | BSEG+COEP | Universal Journal (all FI/CO line items) |
+| BKPF   | BKPF      | Accounting Document Header |
+| SKA1   | SKA1      | G/L Account Master (Chart of Accounts) |
+| SKB1   | SKB1      | G/L Account Master (Company Code) |
+| LFA1   | LFA1      | Vendor Master General |
+| KNA1   | KNA1      | Customer Master General |
+
+Note: In S/4HANA, BSEG is a compatibility view over ACDOCA. Always use ACDOCA for new development.

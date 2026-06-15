@@ -1,46 +1,36 @@
 @echo off
-title PetabyteAi Server
-color 0A
-echo.
-echo  ==========================================
-echo    PetabyteAi Server - Starting...
-echo  ==========================================
-echo.
+REM ─────────────────────────────────────────────────────────────────
+REM  PetabyteAi launcher — Windows wrapper
+REM  All real work happens in start.js (cross-platform).
+REM
+REM  Usage:
+REM    start-server.bat              -> production
+REM    start-server.bat --dev        -> hot-reload backend
+REM    start-server.bat --no-browser -> skip auto-open
+REM ─────────────────────────────────────────────────────────────────
 
-:: Check if Node.js is installed
+setlocal
+title PetabyteAi Server
+chcp 65001 >nul 2>&1
+cd /d "%~dp0"
+
 where node >nul 2>nul
 if %errorlevel% neq 0 (
-    color 0C
-    echo  [ERROR] Node.js is not installed!
     echo.
-    echo  Please download and install Node.js from:
-    echo  https://nodejs.org/
+    echo  [ERROR] Node.js is not installed.
+    echo  Download it from: https://nodejs.org/
     echo.
     pause
     exit /b 1
 )
 
-echo  Node.js found:
-node --version
+node start.js %*
+set EXITCODE=%errorlevel%
 
-:: Go to server folder
-cd /d "%~dp0server"
-
-:: Install dependencies if node_modules missing
-if not exist "node_modules" (
+if %EXITCODE% neq 0 (
     echo.
-    echo  Installing dependencies...
-    call npm install
+    echo  Launcher exited with code %EXITCODE%
+    pause
 )
 
-echo.
-echo  ==========================================
-echo    Server running at: http://localhost:3001
-echo    Open your browser and go to that URL
-echo  ==========================================
-echo.
-
-:: Start server
-node server.js
-
-pause
+endlocal & exit /b %EXITCODE%

@@ -1,0 +1,62 @@
+# ╔═══════════════════════════════════════════════════════════╗
+# ║ PetabyteAi — private-deployment compose file              ║
+# ╚═══════════════════════════════════════════════════════════╝
+# Spins up Postgres + the backend. Drop a reverse proxy (caddy,
+# nginx, traefik) in front of port 3001 for TLS; intentionally
+# left out here to keep the compose file pluggable.
+#
+#   docker compose up -d          # start
+#   docker compose logs -f api    # tail logs
+#   docker compose down           # stop
+#
+# The first boot runs migrations (including phase0 seed), so a
+# fresh volume comes up with working tbl_user/admin rows.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${DB_NAME:-petabyte_ai}
+      POSTGRES_USER:     ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASS:?DB_PASS must be set in .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test:     ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-petabyte_ai}"]
+      interval: 10s
+      timeout:  5s
+      retries:  10
+    # NOT exposed to host by default — api reaches it over the private net.
+    # Uncomment to allow local pgAdmin / psql from host:
+    # ports:
+    #   - "127.0.0.1:5432:5432"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV:          production
+      PORT:              3001
+      DB_HOST:           db
+      DB_PORT:           5432
+      DB_NAME:           ${DB_NAME:-petabyte_ai}
+      DB_USER:           ${DB_USER:-postgres}
+      DB_PASS:           ${DB_PASS:?DB_PASS must be set in .env}
+      OPENAI_API_KEY:    ${OPENAI_API_KEY:?OPENAI_API_KEY must be set in .env}
+      OPENAI_MODEL:      ${OPENAI_MODEL:-gpt-4o-mini}
+      SESSION_SECRET:    ${SESSION_SECRET:?SESSION_SECRET must be set in .env}
+      CORS_ORIGINS:      ${CORS_ORIGINS:-http://localhost:8080}
+      LOGIN_MAX_PER_15MIN: ${LOGIN_MAX_PER_15MIN:-10}
+    ports:
+      - "${API_PORT:-3001}:3001"
+    # stop_grace_period gives graceful-shutdown time to drain inflight requests
+    stop_grace_period: 30s
+
+volumes:
+  db-data:

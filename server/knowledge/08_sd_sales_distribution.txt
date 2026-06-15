@@ -1,0 +1,130 @@
+SD — SALES & DISTRIBUTION BAPIs — PetabyteAi SAP Knowledge Base
+=================================================================
+Version: S/4HANA 2023
+
+## SALES ORDER
+
+### BAPI_SALESORDER_CREATEFROMDAT2 — Create Sales Order
+Purpose: Create a new sales order (VA01 equivalent)
+Key Parameters:
+  ORDER_HEADER_IN:  DOC_TYPE (order type), SALES_ORG, DISTR_CHAN, DIVISION
+  ORDER_ITEMS_IN:   MATERIAL, TARGET_QTY, TARGET_QU, PLANT
+  ORDER_PARTNERS:   PARTN_ROLE (SP=sold-to, SH=ship-to), PARTN_NUMB
+  RETURN:           Return messages table
+
+Example:
+  CALL FUNCTION 'BAPI_SALESORDER_CREATEFROMDAT2'
+    EXPORTING order_header_in  = ls_header
+    TABLES    order_items_in   = lt_items
+              order_partners   = lt_partners
+              return           = lt_return.
+  IF lt_return IS INITIAL.
+    CALL FUNCTION 'BAPI_TRANSACTION_COMMIT' EXPORTING wait = 'X'.
+  ENDIF.
+
+### BAPI_SALESORDER_CHANGE — Change Sales Order
+  CALL FUNCTION 'BAPI_SALESORDER_CHANGE'
+    EXPORTING salesdocument    = lv_vbeln
+              order_header_in  = ls_header
+    TABLES    return           = lt_return.
+
+### BAPI_SALESORDER_GETLIST — Get Sales Order List
+  CALL FUNCTION 'BAPI_SALESORDER_GETLIST'
+    EXPORTING customer_number = lv_kunnr
+              sales_org       = lv_vkorg
+    TABLES    sales_orders    = lt_orders
+              return          = lt_return.
+
+### BAPI_SALESORDER_GETSTATUS — Get Order Status
+  CALL FUNCTION 'BAPI_SALESORDER_GETSTATUS'
+    EXPORTING salesdocument = lv_vbeln
+    TABLES    headstatus    = lt_headstatus
+              return        = lt_return.
+
+---
+
+## DELIVERY
+
+### BAPI_OUTB_DELIVERY_CREATE_SLS — Create Outbound Delivery
+  CALL FUNCTION 'BAPI_OUTB_DELIVERY_CREATE_SLS'
+    EXPORTING ship_point    = lv_vstel
+              due_date      = sy-datum
+    TABLES    sales_order_items = lt_so_items
+              return           = lt_return.
+
+### BAPI_OUTB_DELIVERY_CONFIRM_DEC — Post Goods Issue (PGI)
+  CALL FUNCTION 'BAPI_OUTB_DELIVERY_CONFIRM_DEC'
+    EXPORTING vbeln_vl = lv_delivery_no
+    TABLES    return   = lt_return.
+
+### BAPI_INBOUND_DELIVERY_CONFIRM — Confirm Inbound Delivery (GR)
+  CALL FUNCTION 'BAPI_INBOUND_DELIVERY_CONFIRM'
+    EXPORTING delivery_number = lv_vbeln
+    TABLES    return          = lt_return.
+
+---
+
+## BILLING
+
+### BAPI_BILLINGDOC_CREATEMULTIPLE — Create Billing Document
+  CALL FUNCTION 'BAPI_BILLINGDOC_CREATEMULTIPLE'
+    TABLES    billingdatain = lt_billing_data
+              return        = lt_return.
+
+### BAPI_BILLINGDOC_GETDETAIL — Get Billing Detail
+  CALL FUNCTION 'BAPI_BILLINGDOC_GETDETAIL'
+    EXPORTING billingdocument = lv_vbeln
+    IMPORTING header          = ls_header
+    TABLES    items           = lt_items
+              return          = lt_return.
+
+---
+
+## CUSTOMER MASTER
+
+### BAPI_CUSTOMER_GETDETAIL2 — Get Customer Detail
+  CALL FUNCTION 'BAPI_CUSTOMER_GETDETAIL2'
+    EXPORTING customerno     = lv_kunnr
+    IMPORTING customergeneral = ls_general
+    TABLES    return         = lt_return.
+
+### BAPI_CUSTOMER_CREATEFROMDATA1 — Create Customer
+  CALL FUNCTION 'BAPI_CUSTOMER_CREATEFROMDATA1'
+    EXPORTING pi_copyreference = lv_kunnr_ref
+    IMPORTING e_kunnr          = lv_new_kunnr
+    TABLES    return           = lt_return.
+
+---
+
+## KEY SD TRANSACTION CODES
+
+| T-Code | Description |
+|--------|-------------|
+| VA01   | Create Sales Order |
+| VA02   | Change Sales Order |
+| VA03   | Display Sales Order |
+| VL01N  | Create Outbound Delivery |
+| VL02N  | Change Outbound Delivery |
+| VF01   | Create Billing Document |
+| VF02   | Change Billing Document |
+| VKM1   | Blocked SD Documents (Credit) |
+| XD01   | Create Customer (Central) |
+| XD02   | Change Customer |
+| VD51   | Create Customer-Material Info |
+
+---
+
+## KEY SD TABLES
+
+| Table  | Description |
+|--------|-------------|
+| VBAK   | Sales Order Header |
+| VBAP   | Sales Order Item |
+| VBPA   | Sales Document: Partner |
+| LIKP   | Delivery Header |
+| LIPS   | Delivery Item |
+| VBRK   | Billing Document Header |
+| VBRP   | Billing Document Item |
+| KNA1   | Customer Master General |
+| KNVV   | Customer Sales Data |
+| KONV   | Pricing Conditions |

@@ -1,0 +1,78 @@
+{
+  "_doc": [
+    "Phase 18 — Skill Prompts (no DB) registry.",
+    "",
+    "Each entry under `skills` maps a routing skillId to a system prompt that",
+    "the chat router can pick at runtime. The router (detectIntent in server.js)",
+    "reads this file at boot, and again whenever an admin hits the reload",
+    "endpoint or restarts the server.",
+    "",
+    "Required fields per skill:",
+    "  id              — short slug, used internally (e.g. 'obsolete_check')",
+    "  label           — human-readable display name (e.g. 'ตรวจคำสั่ง deprecated')",
+    "  description     — 1-2 sentence summary — THIS is what the router reads",
+    "                    to decide whether to pick this skill for a question.",
+    "                    Make it specific. Bad: 'ABAP help'. Good: 'Detect",
+    "                    deprecated ABAP statements like INTO TABLE/INTO and",
+    "                    suggest modern alternatives.'",
+    "  content         — the actual system prompt that gets injected as",
+    "                    additional_instructions on the Assistants run.",
+    "                    Paste the FULL prompt content from your OpenAI",
+    "                    Playground prompt here.",
+    "  openaiPromptId  — optional, for traceability back to the OpenAI",
+    "                    dashboard prompt (e.g. 'pmpt_abc123').",
+    "",
+    "Workflow when the ABAP team updates a prompt on OpenAI Playground:",
+    "  1) Copy the new content from OpenAI.",
+    "  2) Edit this file, replace the `content` for the matching skill.",
+    "  3) POST /api/skills/reload   (or restart server)",
+    "",
+    "When DB support lands (Phase 2 after PM approval), this file is the",
+    "seed data for the migration script."
+  ],
+  "version": 1,
+  "skills": [
+    {
+      "id": "obsolete_check",
+      "label": "🔍 Obsolete Statement Check",
+      "description": "Detect deprecated or obsolete ABAP statements (INTO TABLE/INTO single, MOVE TO, OCCURS clauses, INTERNAL TABLE without standard table type, etc.) and recommend modern replacements.",
+      "openaiPromptId": "",
+      "content": "REPLACE WITH FULL CONTENT FROM OPENAI PLAYGROUND — PROMPT_OBSOLETE_STATEMENT"
+    },
+    {
+      "id": "select_best_practice",
+      "label": "📋 SELECT Best Practice",
+      "description": "Review ABAP SELECT statements for best practices — FOR ALL ENTRIES handling, INNER vs LEFT OUTER JOIN choice, indexed field usage, SELECT * avoidance, ORDER BY without index.",
+      "openaiPromptId": "",
+      "content": "REPLACE WITH FULL CONTENT FROM OPENAI PLAYGROUND — PROMPT_SELECT_BEST_PRACTICE"
+    },
+    {
+      "id": "select_loop_check",
+      "label": "⚠️ SELECT in LOOP",
+      "description": "Detect SELECT statements placed inside LOOP/DO/WHILE blocks and recommend bulk fetch via FOR ALL ENTRIES or pre-loaded internal tables instead.",
+      "openaiPromptId": "",
+      "content": "REPLACE WITH FULL CONTENT FROM OPENAI PLAYGROUND — PROMPT_SELECT_LOOP_CHECK"
+    },
+    {
+      "id": "like_check",
+      "label": "🔤 LIKE Operator Check",
+      "description": "Review usage of LIKE operator in ABAP — especially LIKE inside WHERE clauses, performance implications of leading wildcards, and CASE-sensitivity caveats.",
+      "openaiPromptId": "",
+      "content": "REPLACE WITH FULL CONTENT FROM OPENAI PLAYGROUND — PROMPT_LIKE_CHECK"
+    },
+    {
+      "id": "delete_commented_code",
+      "label": "🧹 Cleanup Commented Code",
+      "description": "Identify commented-out ABAP code blocks (legacy debug, dead code, TODO leftovers) and recommend cleanup.",
+      "openaiPromptId": "",
+      "content": "REPLACE WITH FULL CONTENT FROM OPENAI PLAYGROUND — PROMPT_DELETE_COMMENTED_CODE"
+    },
+    {
+      "id": "abap_best_practice",
+      "label": "✨ ABAP Best Practice (general)",
+      "description": "General ABAP code review covering naming conventions, modularization, error handling, performance, and modern ABAP idioms. Use as a catch-all when the question isn't specifically about one of the focused checks above.",
+      "openaiPromptId": "",
+      "content": "REPLACE WITH FULL CONTENT FROM OPENAI PLAYGROUND — ABAP_BestPractice_1"
+    }
+  ]
+}

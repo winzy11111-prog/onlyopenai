@@ -1,0 +1,269 @@
+SAP INTEGRATION: IDoc, RFC, CPI, BTP — PetabyteAi Knowledge Base
+=================================================================
+Version: S/4HANA 2023 / SAP Integration Suite 2024
+
+## OVERVIEW
+
+SAP integration spans four eras:
+1. **Classic** — RFC, IDoc, ALE (still the workhorses for ERP-to-ERP)
+2. **PI/PO** — SAP Process Integration / Orchestration (on-prem, SOAP/REST)
+3. **CPI / Integration Suite** — cloud integration on BTP (iFlows)
+4. **API Management & Event Mesh** — modern API-first + event-driven patterns
+
+## IDoc — INTERMEDIATE DOCUMENT
+
+### Key Transactions
+| T-Code | Purpose |
+|--------|---------|
+| WE02   | IDoc Display |
+| WE05   | IDoc List |
+| WE19   | IDoc Test Tool (create/reprocess) |
+| WE20   | Partner Profile |
+| WE21   | Port Definition |
+| WE30   | IDoc Type Development |
+| WE31   | Segment Editor |
+| WE60   | Documentation for IDoc Types |
+| WE82   | Assign Message Type to Basic Type |
+| BD87   | Reprocess IDoc |
+| BD10   | Send Material (MATMAS) |
+| BD12   | Send Customer (DEBMAS) |
+| BD14   | Send Vendor (CREMAS) |
+| SM58   | tRFC Queue (failed async RFC) |
+| SMQ1/SMQ2 | qRFC Queues |
+| BD61   | Activate change pointers (general) |
+| BD50   | Activate change pointers (per message type) |
+| BD64   | Distribution Model Maintenance |
+
+### IDoc Status Codes (common)
+**Outbound**
+| Status | Meaning |
+|--------|---------|
+| 01 | IDoc created |
+| 03 | Data passed to port OK |
+| 05 | Error during translation |
+| 12 | Dispatch OK |
+| 26 | Error during syntax check |
+| 29 | Error in ALE service |
+| 30 | IDoc ready for dispatch (ALE service) |
+
+**Inbound**
+| Status | Meaning |
+|--------|---------|
+| 50 | IDoc added (posted to DB) |
+| 51 | Error: application document not posted |
+| 52 | Application document not fully posted |
+| 53 | Application document posted |
+| 56 | IDoc with errors added |
+| 64 | Ready to be transferred to application |
+| 68 | Error — no further processing |
+| 69 | IDoc re-edited |
+
+### Typical IDoc Types
+| Basic Type | Message Type | Purpose |
+|------------|--------------|---------|
+| MATMAS05   | MATMAS   | Material Master |
+| DEBMAS07   | DEBMAS   | Customer Master |
+| CREMAS05   | CREMAS   | Vendor Master |
+| ORDERS05   | ORDERS   | Purchase Order |
+| DESADV01   | DESADV   | Shipping Notification |
+| INVOIC02   | INVOIC   | Invoice |
+| PAYEXT     | PAYEXT   | Payment Advice |
+| WMMBID02   | WMMBID   | Goods Movement |
+| PEXR2002   | PEXR2002 | Payment Extensions |
+
+### Read an IDoc in ABAP
+```abap
+DATA: lt_edidc TYPE TABLE OF edidc,
+      lt_edidd TYPE TABLE OF edidd.
+
+CALL FUNCTION 'IDOC_READ_COMPLETELY'
+  EXPORTING  document_number = '0000000000001234'
+  TABLES     int_edidc       = lt_edidc
+             int_edidd       = lt_edidd
+  EXCEPTIONS document_not_exist = 1 OTHERS = 2.
+```
+
+### Create an Outbound IDoc
+```abap
+DATA: ls_control TYPE edidc,
+      lt_data    TYPE TABLE OF edidd,
+      lt_comm    TYPE TABLE OF edidc.
+
+ls_control-mestyp = 'MATMAS'.
+ls_control-idoctp = 'MATMAS05'.
+ls_control-rcvprt = 'LS'.          " Logical System partner type
+ls_control-rcvprn = 'CLIENT200'.   " Receiver
+
+" Fill lt_data with segment records (segnam + sdata)...
+
+CALL FUNCTION 'MASTER_IDOC_DISTRIBUTE'
+  EXPORTING master_idoc_control = ls_control
+  TABLES    communication_idoc_control = lt_comm
+            master_idoc_data           = lt_data
+  EXCEPTIONS error_in_idoc_control = 1 OTHERS = 99.
+
+IF sy-subrc = 0.
+  COMMIT WORK.
+ENDIF.
+```
+
+## RFC (REMOTE FUNCTION CALL)
+
+### Types
+- **Synchronous (sRFC)** — waits for return. Fails if destination down.
+- **Asynchronous (aRFC)** — fire-and-continue. No guaranteed delivery.
+- **Transactional (tRFC)** — guaranteed exactly-once-after-commit. Failed in SM58.
+- **Queued (qRFC)** — tRFC with ordering. Queues in SMQ1/SMQ2.
+- **Background RFC (bgRFC)** — newer, replaces tRFC/qRFC. tx SBGRFCMON.
+
+### Call Patterns
+```abap
+" Synchronous
+CALL FUNCTION 'BAPI_PO_GETDETAIL1'
+  DESTINATION 'ECC_PROD'
+  EXPORTING purchaseorder = '4500000001'
+  TABLES    poitem        = lt_items
+            return        = lt_return.
+
+" Asynchronous
+CALL FUNCTION 'ZRFC_LOG'
+  STARTING NEW TASK 'LOGGING'
+  DESTINATION 'AUDIT_SYS'
+  EXPORTING event = 'USER_LOGIN'.
+
+" Transactional (bundled until COMMIT WORK)
+CALL FUNCTION 'ZRFC_POST'
+  IN BACKGROUND TASK
+  DESTINATION 'PRD_TARGET'
+  EXPORTING doc = lv_doc.
+COMMIT WORK.
+```
+
+## SAP CLOUD INTEGRATION (CPI) / INTEGRATION SUITE
+
+### Runtime
+- Tenant URL: `https://<tenant>.integrationsuite.cfapps.<region>.hana.ondemand.com`
+- Built on Apache Camel
+- iFlows = XML + Groovy/JS scripts + XSLT + content modifiers
+
+### Adapters (most-used)
+| Adapter | Direction | Notes |
+|---------|-----------|-------|
+| HTTPS   | ↔ | Generic REST-ish endpoints |
+| IDoc    | ↔ | Over HTTP(S) (XML IDoc) |
+| SuccessFactors | ↔ | SF OData |
+| OData V2/V4 | ↔ | S/4HANA gateway |
+| SFTP    | ↔ | File-based |
+| Mail    | ↔ | SMTP/IMAP |
+| AMQP / JMS | ↔ | Event Mesh, Kafka bridge |
+| SOAP 1.x / 2.0 | ↔ | Legacy WSDL |
+| Ariba, Concur, Fieldglass | ↔ | Native SAP SaaS connectors |
+
+### Security Materials
+- **User Credentials** — basic auth / OAuth2 client creds
+- **Integration Certificate** — mTLS
+- **Known Hosts / SSH Key** — SFTP
+- **OAuth2 Credentials** — for downstream API callers
+- **Secure Parameter** — environment-scoped string
+
+### Standard iFlow Pattern (Request-Reply)
+```
+[Sender: HTTPS]
+      ↓
+[Content Modifier]  → set headers, query params
+      ↓
+[Request-Reply: OData V2 Receiver]
+      ↓
+[Content Modifier]  → map fields to response shape
+      ↓
+[Router / Filter]   → branch on status code
+      ↓
+[Message Mapping]
+      ↓
+[Receiver: SuccessFactors]
+```
+
+### Groovy Script Snippet (inside iFlow)
+```groovy
+import com.sap.gateway.ip.core.customdev.util.Message
+
+def Message processData(Message message) {
+    def body = message.getBody(java.lang.String)
+    def headers = message.getHeaders()
+
+    // Parse JSON and reshape
+    def slurper = new groovy.json.JsonSlurper()
+    def parsed  = slurper.parseText(body)
+    def out     = [orderId: parsed.id, amount: parsed.total, date: parsed.dt]
+
+    message.setBody(groovy.json.JsonOutput.toJson(out))
+    message.setHeader('Content-Type', 'application/json')
+    return message
+}
+```
+
+## SAP BTP (BUSINESS TECHNOLOGY PLATFORM)
+
+### Key Services
+| Service | Purpose |
+|---------|---------|
+| Integration Suite | iFlows (CPI), API Mgmt, Open Connectors, Event Mesh |
+| SAP Build | Build Apps, Build Process Automation |
+| Authorization & Trust Mgmt (XSUAA) | OAuth2 / SAML |
+| Destination Service | Connectivity abstraction for apps |
+| Cloud Connector | On-prem ↔ BTP secure tunnel (SCC) |
+| Event Mesh | AMQP 1.0 broker |
+| Kyma Runtime | Managed Kubernetes for extensions |
+| Cloud Foundry Runtime | PaaS for CAP / HTML5 apps |
+| ABAP Environment (Steampunk) | ABAP RAP in cloud |
+
+### Cloud Connector Role
+Exposes on-prem systems (ECC / S/4HANA on-prem / DB) to BTP without public
+IP. Requires installing SCC in customer network, linking to subaccount, and
+defining "Resources" per system (whitelist of hosts/paths).
+
+## EVENT-DRIVEN (EVENT MESH + CLOUD EVENTS)
+
+- S/4HANA on-prem/cloud → **Enterprise Event Enablement** framework
+- Event catalog: `/sap/opu/odata/iwbep/event_catalog;v=0001`
+- Emit events via **BADI /IWBEP/EM_BADI_NOTIFICATION_CONSUMER** or business-object-specific events (e.g. `PurchaseOrder.Created`)
+- Receiver: Event Mesh topic → iFlow AMQP sender → downstream
+
+## API MANAGEMENT ON BTP
+
+- Policies: SpikeArrest, QuotaEnforcement, VerifyAPIKey, OAuthV2, AssignMessage
+- Proxy endpoint pattern:
+  `https://<tenant>.apim.<region>.hana.ondemand.com/<basepath>/<resource>`
+- Create via Edge UI or via CLI `apimgmt` / Terraform.
+
+## TROUBLESHOOTING CHECKLIST
+
+### tRFC stuck in SM58
+1. Double-click → read error text.
+2. `Edit → Execute LUW` to retry once manually.
+3. If destination repaired — use `F9` mass re-execute.
+4. If data error — **delete** LUW (only after root-cause analysis).
+
+### IDoc 51 (inbound error)
+1. WE02 → open IDoc → read error stack in status section.
+2. BD87 → select → reprocess after fix.
+3. If structural: WE19 to clone + edit + test re-post.
+
+### CPI message failed
+1. Monitor → Message Monitoring → search by Correlation ID.
+2. Open message → "Attachments" → MPL attachments carry payloads/errors.
+3. Retry: if design has **JMS retry** or **Data Store**, use those queues.
+4. For adapter-level errors (401, 5xx) — check **Security Material** currency.
+
+## WHEN TO USE WHICH
+
+| Need | Best Tool |
+|------|-----------|
+| ECC → ECC master data | ALE / IDoc |
+| On-prem ERP ↔ SaaS | CPI (iFlow) |
+| Real-time event from S/4 | Enterprise Events + Event Mesh |
+| Internal tight coupling | RFC / bgRFC |
+| External consumers hitting ERP | API Mgmt in front of S/4 OData |
+| File drop from partner | CPI SFTP sender |
+| B2B EDI (EDIFACT, X12) | CPI Trading Partner Mgmt |
+| High-volume sync | Replication (SLT/CDC) |

@@ -1,0 +1,153 @@
+ABAP OBSOLETE SYNTAX GUIDE — PetabyteAi SAP Knowledge Base
+============================================================
+S/4HANA 2023 | ABAP 7.54+
+
+## 1. TABLES STATEMENT (Obsolete)
+
+The TABLES statement declares a global table work area — obsolete since ABAP 4.5.
+
+BAD (obsolete):
+  REPORT ztest.
+  TABLES: mara, makt, vbak.
+  SELECT-OPTIONS s_matnr FOR mara-matnr.
+
+GOOD (modern):
+  REPORT ztest.
+  DATA ls_mara TYPE mara.
+  SELECT-OPTIONS s_matnr FOR ls_mara-matnr.
+
+---
+
+## 2. DATA x LIKE table-field (Obsolete)
+
+LIKE references a database field — hard to maintain, replaced by TYPE.
+
+BAD:
+  DATA: lv_matnr LIKE mara-matnr,
+        lv_date  LIKE sy-datum.
+
+GOOD:
+  DATA: lv_matnr TYPE matnr,      " domain type
+        lv_date  TYPE sy-datum.   " sy field type
+
+---
+
+## 3. SELECT-ENDSELECT Loop (Obsolete)
+
+Processes one row at a time — very slow, use INTO TABLE instead.
+
+BAD:
+  SELECT * FROM mara WHERE mtart = 'ROH'.
+    WRITE: / mara-matnr.
+  ENDSELECT.
+
+GOOD:
+  SELECT matnr mtart FROM mara
+    INTO TABLE @DATA(lt_mara)
+    WHERE mtart = 'ROH'.
+  LOOP AT lt_mara INTO DATA(ls_mara).
+    WRITE: / ls_mara-matnr.
+  ENDLOOP.
+
+---
+
+## 4. MOVE Statement (Obsolete)
+
+MOVE = assignment operator, replaced by simple =.
+
+BAD:  MOVE lv_source TO lv_target.
+GOOD: lv_target = lv_source.
+
+BAD:  MOVE-CORRESPONDING ls_source TO ls_target.
+GOOD: ls_target = CORRESPONDING #( ls_source ).
+
+---
+
+## 5. CONCATENATE (Obsolete for simple cases)
+
+BAD:
+  CONCATENATE lv_first lv_sep lv_last INTO lv_full.
+
+GOOD:
+  lv_full = lv_first && lv_sep && lv_last.
+  "or with template:
+  lv_full = |{ lv_first }{ lv_sep }{ lv_last }|.
+
+---
+
+## 6. WRITE TO Variable (Obsolete)
+
+BAD:  WRITE lv_date TO lv_string.
+GOOD: lv_string = |{ lv_date DATE = USER }|.
+
+---
+
+## 7. Old Internal Table Syntax (Pre-7.40)
+
+BAD:
+  DATA lt_data TYPE TABLE OF ty_data.
+  DATA ls_data TYPE ty_data.
+  ls_data-field = 'value'.
+  APPEND ls_data TO lt_data.
+  CLEAR ls_data.
+
+GOOD:
+  DATA lt_data TYPE TABLE OF ty_data.
+  lt_data = VALUE #( BASE lt_data ( field = 'value' ) ).
+
+  "or with APPEND VALUE:
+  APPEND VALUE #( field = 'value' ) TO lt_data.
+
+---
+
+## 8. Obsolete Logical Operators
+
+BAD:  IF a EQ b AND c NE d OR e GT f.
+GOOD: IF a = b AND c <> d OR e > f.
+
+| Obsolete | Modern |
+|----------|--------|
+| EQ       | =      |
+| NE       | <>     |
+| GT       | >      |
+| LT       | <      |
+| GE       | >=     |
+| LE       | <=     |
+
+---
+
+## 9. REFRESH / CLEAR Table
+
+BAD:  REFRESH lt_table. CLEAR lt_table.
+GOOD: CLEAR lt_table.    "or FREE lt_table. to release memory
+
+---
+
+## 10. Old Function Module for Date/Time
+
+BAD:  CALL FUNCTION 'CONVERT_DATE_TO_INTERNAL' ...
+GOOD: Use cl_abap_datfm or built-in conversion:
+  lv_internal_date = |{ lv_display_date DATE = ENVIRONMENT }|.
+
+---
+
+## 11. Read Table Without Key
+
+BAD:  READ TABLE lt_data INTO ls_data INDEX 1.
+GOOD: DATA(ls_data) = lt_data[ 1 ].  "raises CX_SY_ITAB_LINE_NOT_FOUND if empty
+      "Safe:
+      DATA(ls_data) = VALUE #( lt_data[ 1 ] OPTIONAL ).
+
+---
+
+## Summary Checklist Before Transport
+
+- [ ] No TABLES statement
+- [ ] No LIKE declarations  
+- [ ] No SELECT-ENDSELECT
+- [ ] No MOVE ... TO
+- [ ] No CONCATENATE
+- [ ] No EQ/NE/GT/LT/GE/LE operators
+- [ ] CHECK sy-subrc after SELECT
+- [ ] No SELECT * (specify fields)
+- [ ] No SELECT inside LOOP

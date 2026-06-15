@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log*
+.env
+.env.*
+.git
+.gitignore
+*.log
+db.json
+smoke-*.js
+test-*.js
+dump-schema.js
+schema-dump.*
+.DS_Store
+Thumbs.db

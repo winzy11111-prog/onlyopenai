@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Petabyte logo — interim SVG recreation used while we wait for the
+  high-fidelity PNG/SVG that the customer ships from their brand kit.
+  Two interlocking glyphs ("T" + "B") in a blue→purple gradient, with
+  "PETABYTE" wordmark beneath. Geometry kept simple so it renders
+  crisply at small sizes (e.g. 28px sidebar icon). When the original
+  asset arrives, swap this file out without touching any HTML.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <linearGradient id="pbGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#5a4fcf"/>
+      <stop offset="50%" stop-color="#4a7bd6"/>
+      <stop offset="100%" stop-color="#5fb2e8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Glyph block (T + B interlocked) -->
+  <g transform="translate(20,20)">
+    <!-- T: horizontal bar + vertical stem (purple-leaning) -->
+    <rect x="0"  y="10" width="80"  height="18" fill="#5a4fcf"/>
+    <rect x="26" y="10" width="18"  height="100" fill="#5a4fcf"/>
+
+    <!-- B: vertical stem + two stacked half-circles (blue gradient) -->
+    <rect x="64" y="0"  width="18"  height="120" fill="url(#pbGrad)"/>
+    <path d="M82,0 a32,30 0 0 1 0,60 L64,60 L64,0 Z" fill="url(#pbGrad)"/>
+    <path d="M82,60 a32,30 0 0 1 0,60 L64,120 L64,60 Z" fill="url(#pbGrad)"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="100" y="180" font-family="Arial, sans-serif" font-weight="800"
+        font-size="30" fill="#4a7bd6" text-anchor="middle" letter-spacing="2">
+    PETABYTE
+  </text>
+</svg>

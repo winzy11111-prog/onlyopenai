@@ -1,0 +1,244 @@
+SAP BASIS ADMINISTRATION — PetabyteAi SAP Knowledge Base
+=========================================================
+Version: S/4HANA 2023 / NetWeaver 7.5+
+
+## OVERVIEW
+
+BASIS = SAP system administration. Covers user/role management, transports,
+background jobs, performance monitoring, system logs, and kernel operations.
+For developers: focus on **authorization objects**, **debugging dumps**, and
+**background job scheduling**. For admins: everything else.
+
+## USER & AUTHORIZATION
+
+| T-Code | Purpose |
+|--------|---------|
+| SU01   | User Master Maintenance |
+| SU01D  | Display user (read-only) |
+| SU10   | Mass user maintenance |
+| SU53   | Display last failed auth check (debug missing roles) |
+| SU56   | User buffer analysis |
+| PFCG   | Role Maintenance (authorization roles) |
+| SUIM   | User Information System (who has what) |
+| SU24   | Maintain check indicators for transactions |
+| SU25   | Upgrade Tool for Profile Generator |
+| SU22   | SAP-delivered check values for SU24 |
+| ST01   | Auth trace (developer side) |
+| STAUTHTRACE | System-wide auth trace (replaces ST01 for cross-server) |
+| S_BCE_68001400 | Users by Auth Object (via SUIM) |
+
+### Key Authorization Objects (for ABAP dev)
+
+| Object   | Controls |
+|----------|----------|
+| S_DEVELOP | ABAP Workbench access (CLAS, PROG, FUGR, DEVC, …) |
+| S_TCODE  | Transaction code execution |
+| S_TABU_DIS / S_TABU_NAM | Table data display (by authgroup / by name) |
+| S_PROGRAM | Program execution authorization |
+| S_RFC    | RFC function group access |
+| S_DATASET | Application server file access |
+| S_BTCH_JOB | Background job control |
+| S_TRANSPRT | Transport administration |
+| S_USER_GRP | User groups for SU01 |
+| S_ADMI_FCD | System administration functions |
+
+### AUTHORITY-CHECK Pattern
+
+```abap
+AUTHORITY-CHECK OBJECT 'S_TABU_DIS'
+  ID 'DICBERCLS' FIELD '&NC&'    " authgroup
+  ID 'ACTVT'     FIELD '03'.      " 03=display, 02=change
+
+IF sy-subrc <> 0.
+  MESSAGE e001(00) WITH 'No authorization'.
+ENDIF.
+```
+
+Always check sy-subrc:
+- 0  = authorized
+- 4  = missing auth
+- 12 = object not in user buffer
+- 24 = field value missing in check
+
+## TRANSPORT MANAGEMENT SYSTEM (TMS)
+
+| T-Code | Purpose |
+|--------|---------|
+| SE09 / SE10 | Transport Organizer |
+| STMS   | Transport Management System (landscape view) |
+| STMS_IMPORT | Import queue |
+| SCC1   | Client copy from transport request |
+| SCC4   | Client overview |
+| SE03   | Transport tools (object locks, repairs) |
+| SE01   | Transport Organizer (extended) |
+
+### Transport Flow
+**DEV → QAS → PRD** (typical 3-tier)
+1. Change recorded in Workbench Request (cross-client) or Customizing Request (client-specific).
+2. Release task → request → exported from DEV (auto: files to /usr/sap/trans/).
+3. Import to QAS via STMS_IMPORT. Test.
+4. Import to PRD via STMS_IMPORT. Monitor RC.
+
+### Return Codes
+| RC | Meaning |
+|----|---------|
+| 0  | Success |
+| 4  | Warnings (review) |
+| 8  | Errors (generation failed) |
+| 12 | Severe errors (objects missing) |
+| 16+ | Fatal — abort and investigate |
+
+## BACKGROUND JOBS
+
+| T-Code | Purpose |
+|--------|---------|
+| SM36   | Define / schedule background job |
+| SM37   | Job overview (monitor) |
+| SM39   | Job analysis |
+| SM64   | Trigger event |
+| SM62   | Manage events |
+| SMX    | Own jobs (user's jobs only) |
+| BTCTRNS1/2 | Suspend/resume all jobs |
+
+### Job States
+- **Scheduled** — defined but not released
+- **Released** — awaiting start condition
+- **Ready**    — ready to run, waiting for work process
+- **Active**   — running
+- **Finished** — completed OK
+- **Canceled** — aborted (check ST22 / job log)
+
+### Schedule a Job in ABAP
+
+```abap
+DATA: lv_jobcount TYPE tbtcjob-jobcount,
+      lv_jobname  TYPE tbtcjob-jobname.
+
+lv_jobname = 'ZJOB_NIGHTLY_CLEANUP'.
+
+CALL FUNCTION 'JOB_OPEN'
+  EXPORTING jobname  = lv_jobname
+  IMPORTING jobcount = lv_jobcount.
+
+SUBMIT zreport_cleanup
+  WITH p_date = sy-datum
+  VIA JOB lv_jobname NUMBER lv_jobcount
+  AND RETURN.
+
+CALL FUNCTION 'JOB_CLOSE'
+  EXPORTING jobcount  = lv_jobcount
+            jobname   = lv_jobname
+            sdlstrtdt = sy-datum
+            sdlstrttm = '230000'.
+```
+
+## SYSTEM MONITORING
+
+| T-Code | Purpose |
+|--------|---------|
+| SM21   | System Log (errors, security events) |
+| ST22   | ABAP Runtime Errors (dump analysis) |
+| SM50   | Work Process Overview (single server) |
+| SM66   | Global Work Process Overview (all servers) |
+| SM51   | Application servers list |
+| ST02   | Buffer analysis (table, program, screen) |
+| ST03N  | Workload monitor (response time, CPU) |
+| ST04   | DB performance monitor |
+| ST05   | Performance trace (SQL, RFC, auth) |
+| ST06   | OS Monitor (CPU, memory, I/O) |
+| ST12   | ABAP Trace (single transaction) |
+| SAT    | Runtime Analysis (replaces SE30) |
+| SICK   | Installation Check |
+| RZ10   | Profile maintenance |
+| RZ11   | Parameter maintenance (single instance) |
+| RZ20   | CCMS Alert Monitor |
+| SMLG   | Logon Groups |
+| SMGW   | Gateway Monitor |
+
+## LOCK ENTRIES & UPDATE
+
+| T-Code | Purpose |
+|--------|---------|
+| SM12   | Lock Entry List — find/delete stale locks |
+| SM13   | Update Records — failed updates go here |
+| SM14   | Update Administration |
+
+### Lock Object Usage in ABAP
+
+```abap
+CALL FUNCTION 'ENQUEUE_E_MATERIAL'   " generated from lock object
+  EXPORTING matnr = 'MAT001'
+  EXCEPTIONS foreign_lock = 1 system_failure = 2 OTHERS = 3.
+
+IF sy-subrc = 1.
+  MESSAGE |Locked by { sy-msgv1 }| TYPE 'E'.
+ENDIF.
+
+" ... change logic ...
+
+CALL FUNCTION 'DEQUEUE_E_MATERIAL'
+  EXPORTING matnr = 'MAT001'.
+```
+
+## PERFORMANCE DIAGNOSIS WORKFLOW
+
+1. **ST03N** → identify top response-time transactions.
+2. **ST05** → trace that tx: toggle SQL trace on, reproduce, toggle off, analyze.
+3. **SAT** → ABAP-level profiling (line-by-line CPU time).
+4. **ST22** → check for concurrent dumps.
+5. **ST04** → DB-side expensive SQL.
+6. **SM66** → if long-running work processes, check semaphores/locks.
+
+## KERNEL & RFC
+
+| T-Code | Purpose |
+|--------|---------|
+| SMGW   | Gateway monitor |
+| SM59   | RFC Destinations (test, create, audit) |
+| SMQ1 / SMQ2 | Outbound / Inbound qRFC queues |
+| SMQR   | qRFC registration |
+| SRTCM  | Connection test for SM59 destinations |
+| WE02 / WE05 | IDoc Monitor (see Integration doc) |
+
+### Test RFC in ABAP
+
+```abap
+CALL FUNCTION 'RFC_PING' DESTINATION 'ECC_PROD'
+  EXCEPTIONS system_failure = 1 communication_failure = 2 OTHERS = 3.
+
+IF sy-subrc <> 0.
+  MESSAGE |RFC dest ECC_PROD unreachable: { sy-msgv1 }| TYPE 'E'.
+ENDIF.
+```
+
+## CLIENT ADMINISTRATION
+
+| T-Code | Purpose |
+|--------|---------|
+| SCC4   | Client overview & role (Test/Customizing/Production) |
+| SCC5   | Delete client |
+| SCC7   | Post-client-copy operations |
+| SCC8   | Client export |
+| SCC9   | Remote client copy |
+| SCCL   | Local client copy |
+
+## S/4HANA FIORI LAUNCHPAD ADMIN
+
+| T-Code / App | Purpose |
+|--------------|---------|
+| /UI2/FLPD_CUST | Launchpad Designer (customer) |
+| /UI2/FLPCM_CUST | Content Manager |
+| /UI2/SEMOBJ | Semantic Object registry |
+| PFCG → Menu → SAP Fiori Tile Catalog | Assign catalogs to role |
+
+## COMMON BASIS HEALTH CHECKLIST (daily)
+
+- **SM21** — no red entries
+- **ST22** — review dumps, link to defects
+- **SM37** — canceled jobs
+- **SM13** — no stuck updates
+- **ST02** — no buffer swaps > 10k/day
+- **SM12** — no locks older than session timeout
+- **ST06** — CPU/memory/disk within threshold
+- **RZ20** — no red CCMS alerts
+- **STMS_IMPORT** — clear queue for QAS/PRD

@@ -1,50 +1,52 @@
 /* =====================================================
-   AgentHub SAP — Monochrome Black & White Theme
+   AgentHub — Unified Dark Premium (uses tokens.css)
+   Legacy variable names aliased → new design tokens.
    ===================================================== */
 
 :root {
-    /* Colors */
-    --bg-base: #080808;
-    --bg-surface: #101010;
-    --bg-card: rgba(255, 255, 255, 0.04);
-    --bg-card-hover: rgba(255, 255, 255, 0.08);
-    --border: rgba(255, 255, 255, 0.09);
-    --border-bright: rgba(255, 255, 255, 0.22);
+    /* ── Legacy aliases → new tokens (backward compat) ── */
+    --bg-base: var(--surface-0);
+    --bg-surface: var(--surface-1);
+    --bg-card: var(--surface-1);
+    --bg-card-hover: var(--surface-3);
+    --border: var(--border-default);
+    --border-bright: var(--border-strong);
 
-    /* All accents → white/gray scale */
-    --purple: #e8e8e8;
-    --purple-dim: rgba(255, 255, 255, 0.07);
-    --blue: #b0b0b0;
-    --blue-dim: rgba(255, 255, 255, 0.06);
-    --green: #cccccc;
-    --green-dim: rgba(255, 255, 255, 0.06);
-    --orange: #999999;
-    --orange-dim: rgba(255, 255, 255, 0.05);
-    --pink: #bbbbbb;
-    --pink-dim: rgba(255, 255, 255, 0.05);
+    /* Legacy accent names → indigo accent system.
+       (Old code that referenced --purple/--green/--blue now
+       inherits the new accent + semantic palette automatically.) */
+    --purple: var(--accent);
+    --purple-dim: var(--accent-weak);
+    --blue: var(--info);
+    --blue-dim: var(--info-weak);
+    --green: var(--success);
+    --green-dim: var(--success-weak);
+    --orange: var(--warning);
+    --orange-dim: var(--warning-weak);
+    --pink: var(--accent-hover);
+    --pink-dim: var(--accent-weaker);
 
-    --text-primary: #f0f0f0;
-    --text-secondary: #888888;
-    --text-muted: #444444;
+    --text-primary: var(--text-1);
+    --text-secondary: var(--text-2);
+    --text-muted: var(--text-3);
 
-    /* Gradients — white to gray */
-    --grad-primary: linear-gradient(135deg, #ffffff, #707070);
-    --grad-purple: linear-gradient(135deg, #606060, #ffffff);
-    --grad-green: linear-gradient(135deg, #707070, #e0e0e0);
-    --grad-orange: linear-gradient(135deg, #505050, #b0b0b0);
+    /* Gradients reused from tokens */
+    --grad-primary: var(--grad-accent);
+    --grad-purple: var(--grad-accent);
+    --grad-green: var(--grad-success);
+    --grad-orange: linear-gradient(135deg, var(--warning) 0%, var(--warning-hover) 100%);
 
     /* Sidebar */
-    --sidebar-w: 260px;
-    --sidebar-bg: #050505;
+    --sidebar-bg: var(--surface-1);
 
-    /* Spacing */
-    --radius: 12px;
-    --radius-sm: 8px;
-    --radius-lg: 16px;
+    /* Legacy spacing tokens */
+    --radius: var(--radius-md);
+    /* --radius-sm already defined in tokens.css as 6px */
+    /* --radius-lg already defined in tokens.css as 14px */
 
-    /* Shadows */
-    --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.8);
-    --shadow-glow: 0 0 24px rgba(255, 255, 255, 0.04);
+    /* Legacy shadows */
+    --shadow-card: var(--shadow-md);
+    /* --shadow-glow already defined in tokens.css */
 }
 
 /* ---- Reset & Base ---- */
@@ -182,10 +184,236 @@ img {
     flex-shrink: 0;
 }
 
+/* Phase 16.3: hierarchical sidebar — section headers + sub-items
+   to match the requested layout (Dashboard / User Management { Project,
+   User, Activity Log, Credits, Login History } / Balance). */
+.nav-section {
+    /* Non-clickable group label. Slightly muted, no hover state. */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px 6px;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-top: 8px;
+    cursor: default;
+    user-select: none;
+}
+.nav-section:first-of-type { margin-top: 0; }
+
+.nav-item.nav-sub {
+    /* Indented sub-item; smaller font, no left accent bar so the active
+       state still reads clearly without competing with the section header. */
+    padding-left: 36px;
+    font-size: 0.825rem;
+}
+.nav-item.nav-sub.active::before {
+    /* Move the accent bar to align with the indent rather than the icon. */
+    left: 22px;
+}
+
+/* Pencil-icon edit button used in the User table (Phase 16.4) — keeps the
+   row clean while still allowing edits. Hover state mirrors text-secondary. */
+.btn-icon-edit {
+    background: transparent;
+    border: none;
+    padding: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text-3, #888);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+}
+.btn-icon-edit:hover { background: var(--surface-3); color: var(--text-1); }
+
+/* Phase 16.21: larger icon-action buttons used in Project card header
+   (text + icon together so the user knows what they do at a glance). */
+.btn-icon-action {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-default);
+    background: var(--surface-2);
+    color: var(--text-2);
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+}
+.btn-icon-action:hover {
+    background: var(--surface-3);
+    color: var(--text-1);
+}
+.btn-icon-edit-large:hover {
+    border-color: var(--accent-soft-border);
+    color: var(--accent);
+}
+.btn-icon-danger-large:hover {
+    border-color: rgba(239, 68, 68, 0.35);
+    color: var(--danger, #ef4444);
+    background: rgba(239, 68, 68, 0.06);
+}
+
+/* ── Theme toggle button (Phase 16.15) ───────────────────────────
+   Lives in the sidebar above the logout button. Subtle by default,
+   accent-tinted on hover so the user notices it's interactive. */
+.theme-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    padding: 9px 12px;
+    margin-bottom: 6px;
+    background: transparent;
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    color: var(--text-2, #b8b9c0);
+    font-family: inherit;
+    font-size: .82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.theme-toggle-btn:hover {
+    background: var(--accent-soft-bg);
+    border-color: var(--accent-soft-border);
+    color: var(--accent);
+}
+.theme-toggle-btn svg { flex-shrink: 0; }
+
+/* ── Custom dropdown (Phase 16.14) ────────────────────────────────────
+   A reusable trigger + popup pair. The trigger looks like a modal input
+   (dark bg, soft border, subtle hover); the popup uses absolute positioning
+   set inline by JS so it lines up under the trigger. The browser's native
+   <select> can't deliver this look reliably across platforms, especially
+   the options menu (Chromium/Firefox/Safari each render their own way). */
+/* Phase 16.15: token-driven so dark + light themes share the same rules. */
+.dd-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-width: 260px;
+    padding: 9px 14px;
+    background: var(--surface-3);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    color: var(--text-1);
+    font-family: 'Inter', sans-serif;
+    font-size: .86rem;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.dd-trigger:hover {
+    background: var(--surface-4);
+    border-color: rgba(var(--accent-rgb), 0.35);
+}
+.dd-trigger.dd-open {
+    background: var(--accent-soft-bg);
+    border-color: rgba(var(--accent-rgb), 0.45);
+    box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.10);
+}
+.dd-trigger-label {
+    flex: 1;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.dd-trigger-chevron {
+    flex-shrink: 0;
+    color: var(--text-3);
+    transition: transform 0.2s ease, color 0.15s ease;
+}
+.dd-trigger:hover .dd-trigger-chevron,
+.dd-trigger.dd-open  .dd-trigger-chevron { color: var(--accent); }
+.dd-trigger.dd-open  .dd-trigger-chevron { transform: rotate(180deg); }
+
+/* Popup (positioned by JS) */
+.dd-popup {
+    position: absolute;
+    z-index: 9999;
+    min-width: 260px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-default);
+    border-radius: 10px;
+    box-shadow: var(--shadow-lg);
+    padding: 8px;
+    animation: dd-pop-in 0.12s ease-out;
+}
+@keyframes dd-pop-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.dd-search {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px 10px;
+    margin-bottom: 6px;
+    background: var(--surface-3);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    color: var(--text-1);
+    font-size: .82rem;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+.dd-search:focus { border-color: rgba(var(--accent-rgb), 0.45); }
+.dd-list {
+    max-height: 260px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+}
+.dd-list::-webkit-scrollbar       { width: 8px; }
+.dd-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+.dd-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    color: var(--text-2);
+    font-size: .85rem;
+    cursor: pointer;
+    transition: background 0.1s ease, color 0.1s ease;
+    user-select: none;
+}
+.dd-item:hover { background: var(--surface-3); color: var(--text-1); }
+.dd-item.dd-selected {
+    background: rgba(var(--accent-rgb), 0.12);
+    color: var(--accent);
+    font-weight: 600;
+}
+.dd-item .dd-check {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--accent);
+    visibility: hidden;
+}
+.dd-item.dd-selected .dd-check { visibility: visible; }
+.dd-empty {
+    padding: 16px;
+    text-align: center;
+    color: var(--text-3);
+    font-size: .8rem;
+}
+.dd-divider {
+    height: 1px;
+    background: var(--border-subtle);
+    margin: 4px 2px;
+}
+
 .sidebar-plan-badge {
     margin: 0 14px 12px;
     background: var(--purple-dim);
-    border: 1px solid rgba(167, 139, 250, 0.3);
+    border: 1px solid rgba(var(--accent-rgb), 0.35);
     border-radius: var(--radius);
     padding: 12px 14px;
 }
@@ -362,12 +590,12 @@ img {
 .btn-primary {
     background: var(--grad-primary);
     color: white;
-    box-shadow: 0 4px 15px rgba(167, 139, 250, 0.3);
+    box-shadow: 0 4px 15px rgba(var(--accent-rgb), 0.3);
 }
 
 .btn-primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(167, 139, 250, 0.45);
+    box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.45);
 }
 
 .btn-primary:active {
@@ -421,7 +649,7 @@ img {
 .hero-badge {
     display: inline-block;
     background: var(--purple-dim);
-    border: 1px solid rgba(167, 139, 250, 0.35);
+    border: 1px solid rgba(var(--accent-rgb), 0.35);
     color: var(--purple);
     font-size: 0.8rem;
     font-weight: 600;
@@ -570,7 +798,7 @@ img {
 
 .plan-chip {
     background: var(--purple-dim);
-    border: 1px solid rgba(167, 139, 250, 0.4);
+    border: 1px solid rgba(var(--accent-rgb), 0.35);
     color: var(--purple);
     padding: 5px 14px;
     border-radius: 100px;
@@ -1118,7 +1346,7 @@ img {
 
 .pricing-card.featured {
     border-color: var(--purple);
-    box-shadow: 0 0 30px rgba(167, 139, 250, 0.15);
+    box-shadow: 0 0 30px rgba(var(--accent-rgb), 0.15);
 }
 
 .pricing-card:hover {
@@ -1205,12 +1433,12 @@ img {
 .select-plan-btn.primary {
     background: var(--grad-primary);
     color: white;
-    box-shadow: 0 4px 15px rgba(167, 139, 250, 0.3);
+    box-shadow: 0 4px 15px rgba(var(--accent-rgb), 0.3);
 }
 
 .select-plan-btn.primary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 6px 20px rgba(167, 139, 250, 0.45);
+    box-shadow: 0 6px 20px rgba(var(--accent-rgb), 0.45);
 }
 
 .select-plan-btn.secondary {
@@ -1515,7 +1743,7 @@ img {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.82rem;
     line-height: 1.7;
-    color: #c9d1d9;
+    color: var(--text-1);
     white-space: pre-wrap;
     word-break: break-word;
     margin-top: 8px;

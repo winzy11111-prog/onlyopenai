@@ -1,0 +1,251 @@
+MATERIALS MANAGEMENT (MM) — PetabyteAi SAP Knowledge Base
+==========================================================
+Version: S/4HANA 2023
+
+## OVERVIEW
+
+MM (Materials Management) covers procurement, inventory, material master,
+vendor management, and invoice verification. In S/4HANA, the core table
+MKPF+MSEG is merged into MATDOC (one-table paradigm) — always query MATDOC
+for goods movements in S/4, NOT MKPF/MSEG (which are now compatibility views).
+
+## KEY TRANSACTION CODES
+
+| T-Code | Description | Notes |
+|--------|-------------|-------|
+| MM01   | Create Material Master | Use BAPI_MATERIAL_SAVEDATA in code |
+| MM02   | Change Material Master | Industry/Type cannot be changed after creation |
+| MM03   | Display Material Master ||
+| MM17   | Mass Change Material Master ||
+| MMSC   | List Extension: Storage Locations ||
+| ME21N  | Create Purchase Order | Replaces ME21 (classic) |
+| ME22N  | Change Purchase Order ||
+| ME23N  | Display Purchase Order ||
+| ME51N  | Create Purchase Requisition ||
+| ME57   | Assign PRs to Source ||
+| ME2L   | POs by Vendor | Useful for supplier audits |
+| ME2M   | POs by Material ||
+| ME2N   | POs by PO Number ||
+| MIGO   | Goods Movement (receipt, issue, transfer) | Movement types 101/201/301 |
+| MB1A   | Goods Issue (classic) ||
+| MB1B   | Transfer Posting (classic) ||
+| MB1C   | Other Goods Receipts ||
+| MB51   | Material Document List | In S/4: query MATDOC directly |
+| MB52   | Warehouse Stock on Hand ||
+| MB5B   | Stock on Posting Date ||
+| MIRO   | Logistics Invoice Verification ||
+| MIR4   | Display Invoice Document ||
+| MRBR   | Release Blocked Invoices ||
+| XK01   | Create Vendor (classic FI+MM) | S/4: use BP |
+| BP     | Business Partner (replaces XK/FK/FD in S/4) | MANDATORY in S/4HANA |
+| MK01   | Create Purchasing Vendor (pre-S/4) ||
+| MMBE   | Stock Overview ||
+| ME28   | Release PO (approval) ||
+| ME29N  | Release PO – individual ||
+| ML81N  | Service Entry Sheet ||
+| MRKO   | Consignment Settlement ||
+
+## KEY TABLES
+
+| Table   | Description | S/4HANA note |
+|---------|-------------|--------------|
+| MARA    | Material Master: General Data | unchanged |
+| MAKT    | Material Descriptions (multilingual) ||
+| MARC    | Material Master: Plant Data ||
+| MARD    | Material Master: Storage Location Data ||
+| MBEW    | Material Valuation ||
+| MVKE    | Material Master: Sales Data ||
+| MLAN    | Material Master: Tax Data ||
+| EKKO    | PO Header ||
+| EKPO    | PO Item ||
+| EKET    | PO Schedule Lines ||
+| EKBE    | PO History (GR, IR) ||
+| EBAN    | Purchase Requisition ||
+| MKPF    | Material Doc Header | **S/4: view over MATDOC** |
+| MSEG    | Material Doc Segment | **S/4: view over MATDOC** |
+| MATDOC  | Material Document (S/4 only) | **Primary table in S/4** |
+| RBKP    | Invoice Document Header ||
+| RSEG    | Invoice Document Item ||
+| LFA1    | Vendor Master (General) | Replaced by BUT000 in S/4 BP model |
+| LFB1    | Vendor Master: Company Code ||
+| LFM1    | Vendor Master: Purchasing Org ||
+| T156    | Movement Types ||
+| T024    | Purchasing Groups ||
+| T023    | Material Groups ||
+
+## KEY BAPIs
+
+### Material Master
+- **BAPI_MATERIAL_SAVEDATA** — create/change material
+- **BAPI_MATERIAL_GET_DETAIL** — read with views
+- **BAPI_MATERIAL_GETLIST** — search (use sparingly; prefer CDS in S/4)
+- **BAPI_MATERIAL_MAINTAINDATA_RT** — extended (tax, retail)
+- **BAPI_MATERIAL_EXISTENCECHECK** — check if material exists
+
+### Purchase Orders
+- **BAPI_PO_CREATE1** — create PO (preferred, replaces BAPI_PO_CREATE)
+- **BAPI_PO_CHANGE** — change existing PO
+- **BAPI_PO_GETDETAIL1** — read PO with schedule lines + history
+- **BAPI_PO_RELEASE** — trigger release strategy
+- **BAPI_PO_RESET_RELEASE** — revoke release
+
+### Purchase Requisitions
+- **BAPI_PR_CREATE** — create PR
+- **BAPI_REQUISITION_CREATE** (older) — avoid, use BAPI_PR_CREATE
+- **BAPI_PR_CHANGE** ||
+- **BAPI_PR_GETDETAIL** ||
+- **BAPI_PR_RELEASE** ||
+
+### Goods Movement
+- **BAPI_GOODSMVT_CREATE** — create material document (GR, GI, Transfer)
+- **BAPI_GOODSMVT_CANCEL** — cancel material document
+- **BAPI_GOODSMVT_GETITEMS** — read items (use MATDOC in S/4)
+
+### Invoice Verification
+- **BAPI_INCOMINGINVOICE_CREATE** — create MIRO invoice
+- **BAPI_INCOMINGINVOICE_PARK** — park for later
+- **BAPI_INCOMINGINVOICE_RELEASE** — release blocked
+
+### Vendor (pre-S/4)
+- **BAPI_VENDOR_CREATE** — create vendor (LFA1/LFB1/LFM1)
+- **BAPI_VENDOR_GETDETAIL** ||
+- In S/4: use **CVI_VENDOR_CREATE_FROM_BP** or BP transaction
+
+## MOVEMENT TYPE QUICK REFERENCE
+
+| MvT | Meaning |
+|-----|---------|
+| 101 | GR for purchase order |
+| 102 | Reversal of GR for PO |
+| 103 | GR to blocked stock |
+| 105 | Release blocked stock to unrestricted |
+| 122 | Return to vendor |
+| 161 | Return delivery to customer |
+| 201 | GI for cost center |
+| 202 | Reversal GI cost center |
+| 261 | GI for order |
+| 301 | Transfer posting plant-to-plant |
+| 309 | Transfer material-to-material |
+| 311 | Transfer SLoc to SLoc (single step) |
+| 315 | Transfer SLoc to SLoc (two-step receipt) |
+| 321 | Transfer quality-to-unrestricted |
+| 343 | Transfer blocked-to-unrestricted |
+| 411 | Transfer stock types (special → own) |
+| 501 | GR without PO |
+| 551 | Scrapping |
+| 561 | Initial stock entry |
+| 601 | GI for delivery |
+| 641 | Transfer to stock in transit |
+| 647 | Transfer STO one-step |
+| 653 | GR for returns |
+
+## CODE EXAMPLE — CREATE PO
+
+```abap
+DATA: ls_header   TYPE bapimepoheader,
+      ls_headerx  TYPE bapimepoheaderx,
+      lt_items    TYPE TABLE OF bapimepoitem,
+      lt_itemsx   TYPE TABLE OF bapimepoitemx,
+      lt_sched    TYPE TABLE OF bapimeposchedule,
+      lt_schedx   TYPE TABLE OF bapimeposchedulx,
+      lt_return   TYPE TABLE OF bapiret2,
+      lv_po_num   TYPE bapimepoheader-po_number.
+
+ls_header-comp_code  = '1000'.
+ls_header-doc_type   = 'NB'.         " Standard PO
+ls_header-vendor     = '0000100001'. " 10-digit
+ls_header-purch_org  = '1000'.
+ls_header-pur_group  = '001'.
+ls_header-currency   = 'EUR'.
+
+ls_headerx-comp_code = 'X'.
+ls_headerx-doc_type  = 'X'.
+ls_headerx-vendor    = 'X'.
+ls_headerx-purch_org = 'X'.
+ls_headerx-pur_group = 'X'.
+ls_headerx-currency  = 'X'.
+
+APPEND VALUE #( po_item = '00010' material = 'MAT001'
+                plant = '1000' quantity = 10 net_price = '100.00' po_unit = 'PC' )
+        TO lt_items.
+APPEND VALUE #( po_item = '00010' material = 'X' plant = 'X'
+                quantity = 'X' net_price = 'X' po_unit = 'X' )
+        TO lt_itemsx.
+
+APPEND VALUE #( po_item = '00010' sched_line = '0001'
+                delivery_date = sy-datum quantity = 10 ) TO lt_sched.
+APPEND VALUE #( po_item = '00010' sched_line = '0001'
+                delivery_date = 'X' quantity = 'X' ) TO lt_schedx.
+
+CALL FUNCTION 'BAPI_PO_CREATE1'
+  EXPORTING  poheader       = ls_header
+             poheaderx      = ls_headerx
+  IMPORTING  exppurchaseorder = lv_po_num
+  TABLES     return         = lt_return
+             poitem         = lt_items
+             poitemx        = lt_itemsx
+             poschedule     = lt_sched
+             poschedulex    = lt_schedx.
+
+IF line_exists( lt_return[ type = 'E' ] ) OR
+   line_exists( lt_return[ type = 'A' ] ).
+  CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.
+ELSE.
+  CALL FUNCTION 'BAPI_TRANSACTION_COMMIT' EXPORTING wait = 'X'.
+ENDIF.
+```
+
+## CODE EXAMPLE — GOODS RECEIPT FOR PO (101)
+
+```abap
+DATA: ls_header TYPE bapi2017_gm_head_01,
+      ls_code   TYPE bapi2017_gm_code,
+      lt_items  TYPE TABLE OF bapi2017_gm_item_create,
+      lt_ret    TYPE TABLE OF bapiret2,
+      lv_mat    TYPE bapi2017_gm_head_ret-mat_doc.
+
+ls_header-pstng_date = sy-datum.
+ls_header-doc_date   = sy-datum.
+ls_code-gm_code      = '01'. " MB01 - GR for PO
+
+APPEND VALUE #(
+  move_type     = '101'
+  po_number     = '4500000001'
+  po_item       = '00010'
+  material      = 'MAT001'
+  plant         = '1000'
+  stge_loc      = '0001'
+  entry_qnt     = 10
+  entry_uom     = 'PC'
+  mvt_ind       = 'B'
+) TO lt_items.
+
+CALL FUNCTION 'BAPI_GOODSMVT_CREATE'
+  EXPORTING  goodsmvt_header = ls_header
+             goodsmvt_code   = ls_code
+  IMPORTING  materialdocument = lv_mat
+  TABLES     goodsmvt_item   = lt_items
+             return          = lt_ret.
+```
+
+## RELEASE STRATEGIES (PR / PO)
+
+- Configured in SPRO: **MM → Purchasing → Purchase Order/Requisition → Release Procedure**
+- Tables: **T16FS** (release strategy), **T16FG** (release groups), **T16FC** (release codes)
+- Programmatic release: `BAPI_PO_RELEASE` / `BAPI_PR_RELEASE`
+- Check release status via EKKO-FRGKE ('R' = released, ' ' = blocked)
+
+## COMMON INTEGRATION POINTS
+
+- **MM ↔ FI**: Invoice posting creates FI doc (BKPF/BSEG). Account determination via OBYC.
+- **MM ↔ CO**: GI to cost center posts actual costs (COEP).
+- **MM ↔ SD**: Stock transfer order (STO) ties intercompany flow.
+- **MM ↔ WM/EWM**: Goods movement triggers warehouse task (in EWM: /SCWM/ tables).
+
+## S/4HANA CHANGES TO WATCH
+
+1. **Material number extended** to 40 chars (was 18). Use MATNR_EXTERNAL / MATNR_INTERNAL helpers.
+2. **BP is mandatory** — vendor creation via XK01 is deprecated, use BP tcode or CVI_*.
+3. **MATDOC** replaces MKPF+MSEG. Direct SQL on MKPF/MSEG still works (CDS-based views) but is slower; use MATDOC_EXTRACT CDS view.
+4. **MM-IV (Classic) → New Invoice Verification**: LIV (MIRO) is the only supported flow.
+5. **Output management**: Post-1909, prefer BRF+/Adobe over NAST/SMARTFORMS for new dev.

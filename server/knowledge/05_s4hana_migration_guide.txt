@@ -1,0 +1,129 @@
+S/4HANA MIGRATION GUIDE — PetabyteAi SAP Knowledge Base
+=========================================================
+ECC 6.0 → S/4HANA 2023
+
+## 1. DATABASE CHANGES
+
+### New In-Memory Database (HANA)
+- SAP HANA replaces Oracle/DB2/MSSQL
+- Columnar storage — different performance characteristics
+- No more secondary indexes on most tables
+- Many aggregate tables eliminated (VBFA → direct S/4 tables)
+
+### Key Table Differences
+
+| ECC Table | S/4HANA Replacement | Notes |
+|-----------|---------------------|-------|
+| MARA+MARC+MARD | Universal Journal | Stock in new model |
+| BSEG | ACDOCA | FI line items |
+| COEP | ACDOCA | CO line items |
+| BSX/WRX | ACDOCA | Inventory accounting |
+| VBFA | S4 Sales Flow (no change) | Flow documents same |
+| FAGLFLEXT | ACDOCA | New GL totals in ACDOCA |
+
+### ACDOCA — Universal Journal (most important change)
+- All FI/CO postings in one table
+- No more reconciliation between FI and CO
+- Query: SELECT * FROM acdoca WHERE rbukrs = '1000' AND gjahr = '2024'.
+
+---
+
+## 2. ABAP CODE CHANGES FOR S/4HANA
+
+### Removed Function Modules (Simplified Logistics)
+These FM are removed in S/4HANA — use CDS views or APIs instead:
+- MB_CREATE_GOODS_MOVEMENT (use BAPI_GOODSMVT_CREATE)
+- CKMVFM_UPDATE (removed)
+- Some inventory FMs replaced by MBGMCR IDoc or direct APIs
+
+### Open SQL Changes
+S/4HANA mandates CDS-compatible SQL:
+
+BAD (ECC compatible, but deprecated):
+  SELECT matnr FROM mara CLIENT SPECIFIED WHERE mandt = '100'.
+
+GOOD (S/4HANA):
+  SELECT matnr FROM mara WHERE matnr LIKE 'Z%'.
+
+### New @ Escape for Host Variables
+REQUIRED in S/4HANA:
+  SELECT * FROM mara WHERE mtart = @lv_mtart INTO TABLE @lt_result.
+
+---
+
+## 3. CDS VIEWS OVER DIRECT TABLE ACCESS
+
+Prefer CDS views for business data:
+
+BAD (direct table join):
+  SELECT v~vbeln v~erdat k~kunnr k~name1
+    FROM vbak AS v
+    INNER JOIN kna1 AS k ON v~kunnr = k~kunnr
+    INTO TABLE @DATA(lt_result).
+
+GOOD (CDS view):
+  SELECT sales_order customer_name FROM I_SalesOrder
+    INTO TABLE @DATA(lt_result).
+
+Key S/4HANA CDS Views:
+- I_SalesOrder — Sales orders
+- I_PurchaseOrder — Purchase orders
+- I_GeneralLedgerAccountLineItem — FI line items (replaces BSEG)
+- I_MaterialStock — Material stock (replaces MARD/MARA joins)
+- I_AccountingDocumentItem — Accounting items from ACDOCA
+- I_BusinessPartner — Master data (replaces KNA1/LFA1 for BP)
+- C_SalesOrderItemBillingStatus — Fiori consumption view
+
+---
+
+## 4. BUSINESS PARTNER (BP) — KNA1/LFA1 Obsolete
+
+In S/4HANA, customers and vendors are Business Partners.
+
+Old (ECC):
+  SELECT * FROM kna1 WHERE kunnr = @lv_customer.
+  SELECT * FROM lfa1 WHERE lifnr = @lv_vendor.
+
+New (S/4HANA should use):
+  SELECT * FROM but000 WHERE partner = @lv_bp_number.
+  "or CDS:
+  SELECT FROM I_BusinessPartner WHERE BusinessPartner = @lv_bp.
+
+---
+
+## 5. FIORI & UI5 DEVELOPMENT
+
+### New in S/4HANA
+- All UI via SAP Fiori (replaces some SAPGUI TXN)
+- Embedded Analytics with CDS + Fiori Elements
+- RAP (Restful ABAP Programming) for new apps
+
+### RAP vs Classic BOPF
+S/4HANA 2020+: Use RAP (Business Object Framework)
+```abap
+@AbapCatalog.sqlViewName: 'ZRSALESORDER'
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+define root view entity ZI_SalesOrder
+  as select from vbak
+{
+  key vbeln as SalesOrder,
+      erdat as CreatedDate,
+      kunnr as Customer
+}
+```
+
+---
+
+## 6. COMMON MIGRATION ERRORS
+
+### Error: Table xyz not found
+Tables removed: BSEG line items → use ACDOCA. FAGLFLEXT → use ACDOCA.
+
+### Error: Function module not found
+Check OSS note for replacement. Many inventory FM replaced with APIs.
+
+### Error: Authorization failure in CDS
+Add @AccessControl.authorizationCheck: #CHECK and define DCL source.
+
+### Error: Short dump SAPSQL_INVALID_FIELDNAME
+Column names changed. Check column mapping in migration notes (SAP note 2349261+).

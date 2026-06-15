@@ -1,0 +1,169 @@
+erDiagram
+    tbl_acc_status {
+        integer acc_status_id PK
+        character_varying acc_status
+    }
+    tbl_action_admin {
+        integer user_id FK
+        character_varying project_id
+        integer role_id
+        date edit_date
+        timestamp_without_time_zone edit_time
+        bigint id PK
+        character_varying action_type
+        character_varying target_type
+        integer target_id
+        jsonb change_json
+    }
+    tbl_audit_log {
+        integer user_id FK
+        date log_in_date
+        timestamp_without_time_zone log_in_time
+        date log_out_date
+        timestamp_without_time_zone log_out_time
+        bigint id PK
+        character_varying event_type
+        jsonb detail
+        character_varying ip
+    }
+    tbl_balance {
+        character_varying project_id PK
+        numeric project_credits
+        date top_up_date
+        timestamp_without_time_zone top_up_time
+        integer user_id
+    }
+    tbl_chat_message {
+        bigint message_id PK
+        bigint session_id FK
+        character_varying role
+        text content
+        timestamp_with_time_zone created_at
+        integer input_tokens
+        integer output_tokens
+        numeric cost
+        character_varying model
+        character_varying skill_id
+    }
+    tbl_chat_session {
+        bigint session_id PK
+        integer user_id FK
+        character_varying title
+        timestamp_with_time_zone created_at
+        timestamp_with_time_zone updated_at
+        boolean is_deleted
+        integer message_count
+        numeric total_cost
+    }
+    tbl_credits {
+        integer user_id PK
+        character_varying project_id FK
+        numeric user_credits
+    }
+    tbl_daily_token {
+        date usage_date_th PK
+        character_varying project_id
+        bigint start_time_th
+        bigint end_time_th
+        bigint start_time_utc
+        bigint end_time_utc
+        character_varying model
+        integer input_tokens
+        integer output_tokens
+        integer input_cached_tokens
+        integer input_uncached_tokens
+        integer input_text_tokens
+        integer output_text_tokens
+        integer input_cached_text_tokens
+        integer input_audio_tokens
+        integer input_cached_audio_tokens
+        integer output_audio_tokens
+        integer input_image_tokens
+        integer output_image_tokens
+    }
+    tbl_project {
+        character_varying project_id PK
+        character_varying project_name
+        text project_api_key
+        text admin_api_key
+        date created_date
+        text description
+        numeric input_rate
+        numeric output_rate
+        numeric credit_limit
+        boolean is_deleted
+        timestamp_with_time_zone deleted_at
+        character_varying openai_project_id
+        character_varying openai_service_account_id
+        timestamp_with_time_zone openai_synced_at
+        numeric cached_input_rate
+    }
+    tbl_response {
+        character_varying response_id PK
+        character_varying project_id FK
+        character_varying model
+        timestamp_without_time_zone created_at
+        text input_param
+        text output_param
+        integer input_tokens
+        integer input_cached_tokens
+        integer output_tokens
+        integer output_reasoning_tokens
+        integer total_tokens
+        integer user_id FK
+    }
+    tbl_session {
+        character_varying token PK
+        integer user_id FK
+        character_varying role
+        timestamp_with_time_zone expires_at
+        timestamp_with_time_zone created_at
+        timestamp_with_time_zone last_seen_at
+        character_varying csrf_token
+    }
+    tbl_topup_history {
+        bigint id PK
+        character_varying project_id FK
+        integer user_id FK
+        numeric amount
+        numeric balance_before
+        numeric balance_after
+        text note
+        timestamp_with_time_zone created_at
+    }
+    tbl_user {
+        integer user_id PK
+        character_varying project_id FK
+        integer role_id FK
+        character_varying username
+        character_varying password
+        character_varying name
+        character_varying surname
+        date created_date
+        integer acc_status_id FK
+        boolean is_deleted
+        timestamp_with_time_zone deleted_at
+        integer failed_attempts
+        timestamp_with_time_zone locked_until
+        boolean must_change_password
+        numeric daily_cap
+    }
+    tbl_user_role {
+        integer role_id PK
+        character_varying role_des
+    }
+    tbl_user_role ||--o{ tbl_user : "role_id"
+    tbl_acc_status ||--o{ tbl_user : "acc_status_id"
+    tbl_project ||--o{ tbl_user : "project_id"
+    tbl_chat_session ||--o{ tbl_chat_message : "session_id"
+    tbl_project ||--o{ tbl_balance : "project_id"
+    tbl_user ||--o{ tbl_credits : "user_id"
+    tbl_balance ||--o{ tbl_credits : "project_id"
+    tbl_user ||--o{ tbl_audit_log : "user_id"
+    tbl_user ||--o{ tbl_action_admin : "user_id"
+    tbl_user ||--o{ tbl_session : "user_id"
+    tbl_user ||--o{ tbl_chat_session : "user_id"
+    tbl_project ||--o{ tbl_topup_history : "project_id"
+    tbl_user ||--o{ tbl_topup_history : "user_id"
+    tbl_user ||--o{ tbl_response : "user_id"
+    tbl_project ||--o{ tbl_response : "project_id"

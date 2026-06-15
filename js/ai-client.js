@@ -5,9 +5,13 @@
  */
 
 const AIClient = {
-    BACKEND_URL: 'http://localhost:3001',
+    // Resolved from window.AppConfig (js/config.js) — falls back if not loaded
+    BACKEND_URL: (typeof window !== 'undefined' && window.AppConfig && window.AppConfig.API_BASE) || 'http://localhost:3001',
     _mode: null,
     _modelName: null,
+    // Active AbortController for the in-flight /api/chat request.
+    // Exposed via cancel() so the UI can stop generation mid-stream.
+    _abortCtrl: null,
 
     /** Check backend health once, cache result */
     async checkBackend() {
@@ -36,33 +40,72 @@ const AIClient = {
      * @param {Function} onDone(result) — { inputTokens, outputTokens, cost, durationMs }
      * @param {object}   rates          — { inputRate, outputRate }
      */
-    async run(skillId, prompt, systemPrompt, onChunk, onDone, rates) {
+    async run(skillId, prompt, systemPrompt, onChunk, onDone, rates, sessionId, onError) {
         const mode = await this.checkBackend();
         if (mode === 'openai') {
-            await this._streamFromBackend(skillId, prompt, systemPrompt, onChunk, onDone, rates);
+            await this._streamFromBackend(skillId, prompt, systemPrompt, onChunk, onDone, rates, sessionId, onError);
         } else {
             await MockAI.run(skillId, prompt, onChunk, onDone);
         }
     },
 
     /** Read SSE stream from backend in real-time */
-    async _streamFromBackend(skillId, prompt, systemPrompt, onChunk, onDone, rates) {
+    async _streamFromBackend(skillId, prompt, systemPrompt, onChunk, onDone, rates, sessionId, onError) {
         const startTime = Date.now();
         const inputRate = (rates && rates.inputRate) || 0.50;
         const outputRate = (rates && rates.outputRate) || 1.50;
 
+        // Compose a user-triggerable abort (AIClient.cancel) with the 90s
+        // safety timeout so whichever fires first tears down the fetch.
+        const userCtrl  = new AbortController();
+        this._abortCtrl = userCtrl;
+        const timeoutId = setTimeout(() => userCtrl.abort('timeout'), 90000);
+
         try {
+            // Phase 6.1: include Bearer token (server requires requireAuth on /api/chat)
+            const headers = (typeof Auth !== 'undefined' && Auth.authHeaders)
+                ? Auth.authHeaders()
+                : { 'Content-Type': 'application/json' };
+            const body = { skillId, prompt, systemPrompt, inputRate, outputRate };
+            // Phase 12: thread messages into an existing chat session (or
+            // let the server create one on first send when sessionId is null).
+            if (sessionId) body.sessionId = sessionId;
             const res = await fetch(`${this.BACKEND_URL}/api/chat`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ skillId, prompt, systemPrompt, inputRate, outputRate }),
-                signal: AbortSignal.timeout(90000)
+                headers,
+                body: JSON.stringify(body),
+                signal: userCtrl.signal
             });
+
+            // Phase 21.10 — Concept B credit gates. Server returns
+            // 402 (project pool empty) or 429 (daily cap exceeded) BEFORE
+            // streaming starts, with a JSON body containing { error, message, ... }.
+            // Handle these by calling onError (if provided) so the UI can show
+            // a distinct block message + "request more quota" path, instead of
+            // trying to read the JSON as SSE chunks.
+            if (!res.ok) {
+                let info = null;
+                try { info = await res.json(); } catch (_) { info = { error: 'http_' + res.status }; }
+                if (typeof onError === 'function') {
+                    onError({ status: res.status, ...info });
+                } else {
+                    console.warn('[AIClient] chat blocked:', res.status, info);
+                }
+                // Surface an empty done so caller can reset its UI (button etc.).
+                await onDone({
+                    inputTokens: 0, outputTokens: 0, cost: 0,
+                    durationMs: Date.now() - startTime,
+                    sessionId: sessionId || null,
+                    blocked: true,
+                });
+                return;
+            }
 
             // Read SSE line-by-line
             const reader = res.body.getReader();
             const decoder = new TextDecoder();
             let buffer = '';
+            let sawDone = false;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -82,11 +125,14 @@ const AIClient = {
                         onChunk(event.text);
 
                     } else if (event.type === 'done') {
+                        sawDone = true;
                         await onDone({
                             inputTokens: event.inputTokens,
                             outputTokens: event.outputTokens,
                             cost: event.cost,
                             durationMs: Date.now() - startTime,
+                            sessionId: event.sessionId,   // Phase 12: so client can pin the new thread id
+                            stopped: !!event.stopped,
                         });
 
                     } else if (event.type === 'use_mock' || event.type === 'error') {
@@ -99,10 +145,43 @@ const AIClient = {
                 }
             }
 
+            // Stream closed without a `done` event — treat as a benign
+            // close (e.g. user cancelled). Still surface an onDone so the
+            // caller can reset UI state.
+            if (!sawDone) {
+                await onDone({
+                    inputTokens: 0, outputTokens: 0, cost: 0,
+                    durationMs: Date.now() - startTime,
+                    sessionId: sessionId || null,
+                    stopped: true,
+                });
+            }
+
         } catch (err) {
+            // User-initiated cancel — NOT a failure, don't fall through to mock.
+            if (err.name === 'AbortError' || userCtrl.signal.aborted) {
+                await onDone({
+                    inputTokens: 0, outputTokens: 0, cost: 0,
+                    durationMs: Date.now() - startTime,
+                    sessionId: sessionId || null,
+                    stopped: true,
+                });
+                return;
+            }
             console.error('[AIClient] Stream error:', err.message);
             this._mode = 'mock';
             await MockAI.run(skillId, prompt, onChunk, onDone);
+        } finally {
+            clearTimeout(timeoutId);
+            if (this._abortCtrl === userCtrl) this._abortCtrl = null;
+        }
+    },
+
+    /** Abort the in-flight /api/chat request, if any. */
+    cancel() {
+        if (this._abortCtrl) {
+            try { this._abortCtrl.abort('user_cancel'); } catch (_) {}
+            this._abortCtrl = null;
         }
     },
 

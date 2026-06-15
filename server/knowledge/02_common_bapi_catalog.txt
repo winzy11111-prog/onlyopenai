@@ -1,0 +1,111 @@
+COMMON SAP BAPI CATALOG — PetabyteAi SAP Knowledge Base
+========================================================
+Version: S/4HANA 2023
+
+## MATERIAL MANAGEMENT (MM)
+
+### BAPI_MATERIAL_SAVEDATA — Create/Change Material
+Purpose: Create or update material master data
+Key Parameters:
+  HEADDATA:   MATNR (material number), MTYPE (material type)
+  CLIENTDATA: MEINS (base unit), MATKL (material group)
+  PLANTDATA:  WERKS (plant), BESKZ (procurement type)
+
+Example:
+  CALL FUNCTION 'BAPI_MATERIAL_SAVEDATA'
+    EXPORTING headdata   = ls_headdata
+              clientdata = ls_clientdata
+    TABLES    returnmessages = lt_return.
+
+### BAPI_MATERIAL_GET_DETAIL — Read Material Detail
+  CALL FUNCTION 'BAPI_MATERIAL_GET_DETAIL'
+    EXPORTING material    = lv_matnr
+              plant       = lv_werks
+    IMPORTING materialgeneral = ls_general
+    TABLES    returnmessages  = lt_return.
+
+### BAPI_GOODSMVT_CREATE — Post Goods Movement (GI/GR)
+  CALL FUNCTION 'BAPI_GOODSMVT_CREATE'
+    EXPORTING goodsmvt_header = ls_header
+              goodsmvt_code   = ls_code
+    TABLES    goodsmvt_item    = lt_items
+              return           = lt_return.
+
+### BAPI_PO_CREATE1 — Create Purchase Order
+Key imports: POHEADER (vendor, doc type), POITEM (material, qty)
+
+### BAPI_PO_CHANGE — Change Purchase Order
+### BAPI_PO_GETDETAIL — Read Purchase Order
+
+---
+
+## SALES & DISTRIBUTION (SD)
+
+### BAPI_SALESORDER_CREATEFROMDAT2 — Create Sales Order
+Key Parameters:
+  ORDER_HEADER_IN: SALES_ORG, DISTR_CHAN, DIVISION, PARVW=SP (sold-to)
+  ORDER_ITEMS_IN:  MATERIAL, TARGET_QTY, SALES_UNIT
+  ORDER_PARTNERS:  PARWA, PARTNER (customer number)
+
+### BAPI_SALESORDER_CHANGE — Change Sales Order
+### BAPI_SALESORDER_GETLIST — Search Sales Orders
+### SD_SALESDOCUMENT_CREATE — Alternative create (older)
+
+---
+
+## FINANCE (FI)
+
+### BAPI_ACC_DOCUMENT_POST — Post FI Document
+Key: DOCUMENTHEADER, ACCOUNTGL, CURRENCYAMOUNT
+
+### BAPI_ACC_GL_POSTING_POST — Post G/L Document
+### BAPI_CUSTOMER_GETDETAIL2 — Read Customer Master
+### BAPI_VENDOR_GETDETAIL — Read Vendor Master
+
+---
+
+## HUMAN RESOURCES (HR)
+
+### BAPI_EMPLOYEE_GETDATA — Read Employee Data
+### HR_INFOTYPE_OPERATION — Change HR Infotype
+### BAPI_ABSENCE_CREATE — Create Absence
+
+---
+
+## PRODUCTION PLANNING (PP)
+
+### BAPI_PRODORD_CREATE — Create Production Order
+### BAPI_PRODORD_CHANGE — Change Production Order
+### CO_ZP_ORDER_CREATE — Create Process Order
+
+---
+
+## PLANT MAINTENANCE (PM)
+
+### BAPI_ALM_ORDER_MAINTAIN — Create/Change PM Order
+### BAPI_NOTIF_CREATE — Create Notification
+
+---
+
+## UTILITY FUNCTION MODULES
+
+### CONVERSION_EXIT_MATNR_INPUT  — Convert material number (leading zeros)
+### CONVERSION_EXIT_ALPHA_INPUT  — Add leading zeros
+### CONVERSION_EXIT_ALPHA_OUTPUT — Remove leading zeros
+### DATE_CHECK_PLAUSIBILITY       — Validate date
+### POPUP_TO_CONFIRM              — Show confirmation dialog
+### REUSE_ALV_GRID_DISPLAY        — Display ALV grid report
+
+---
+
+## BAPI RETURN CODE CHECK PATTERN
+
+  CALL FUNCTION 'BAPI_XXX' ... TABLES return = lt_return.
+
+  READ TABLE lt_return WITH KEY type = 'E' TRANSPORTING NO FIELDS.
+  IF sy-subrc = 0.
+    CALL FUNCTION 'BAPI_TRANSACTION_ROLLBACK'.
+    "handle error
+  ELSE.
+    CALL FUNCTION 'BAPI_TRANSACTION_COMMIT' EXPORTING wait = 'X'.
+  ENDIF.

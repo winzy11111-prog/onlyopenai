@@ -1,0 +1,192 @@
+CDS VIEW PATTERNS — PetabyteAi SAP Knowledge Base
+==================================================
+S/4HANA 2023 | ABAP CDS + RAP
+
+## 1. BASIC CDS VIEW STRUCTURE
+
+### Interface (Data Model) View
+```cds
+@AbapCatalog.sqlViewName: 'ZV_MATERIAL'
+@AbapCatalog.compiler.compareFilter: true
+@AccessControl.authorizationCheck: #NOT_REQUIRED
+@EndUserText.label: 'Material Interface View'
+define view ZI_Material
+  as select from mara
+  association [0..1] to makt as _Desc on $projection.Matnr = _Desc.matnr
+                                     and _Desc.spras = $session.system_language
+{
+  key matnr  as Matnr,
+      mtart  as MaterialType,
+      matkl  as MaterialGroup,
+      meins  as BaseUnit,
+      _Desc.maktx as Description,
+      _Desc       " expose association
+}
+```
+
+### Consumption (Fiori/Report) View
+```cds
+@AbapCatalog.sqlViewName: 'ZV_MATCONS'
+@OData.publish: true
+define view ZC_Material
+  as select from ZI_Material
+{
+  @UI.lineItem: [{ position: 10, label: 'Material' }]
+  @UI.selectionField: [{ position: 10 }]
+  Matnr,
+
+  @UI.lineItem: [{ position: 20, label: 'Type' }]
+  MaterialType,
+
+  @UI.lineItem: [{ position: 30, label: 'Description' }]
+  Description
+}
+```
+
+---
+
+## 2. ASSOCIATIONS
+
+```cds
+define view ZI_SalesOrderItem
+  as select from vbap
+  association [1..1] to vbak as _Header on $projection.Vbeln = _Header.vbeln
+  association [0..*] to vbap as _AllItems on $projection.Vbeln = _AllItems.vbeln
+{
+  key vbeln as Vbeln,
+  key posnr as Posnr,
+      matnr as Material,
+      kwmeng as Quantity,
+      _Header,
+      _Header.erdat as OrderDate, " can flatten
+      _AllItems
+}
+```
+
+---
+
+## 3. CALCULATED FIELDS & CASE
+
+```cds
+define view ZI_OrderStatus
+  as select from vbak
+{
+  key vbeln as SalesOrder,
+      case gbstk
+        when 'A' then 'Open'
+        when 'B' then 'Partial'
+        when 'C' then 'Complete'
+        else 'Unknown'
+      end as StatusText,
+      
+      @Semantics.amount.currencyCode: 'Currency'
+      netwr as NetAmount,
+      waerk as Currency,
+      
+      @Semantics.unitOfMeasure: true
+      meins as UoM
+}
+```
+
+---
+
+## 4. AGGREGATION VIEW (for analytics)
+
+```cds
+@Analytics.dataCategory: #CUBE
+define view ZI_SalesCube
+  as select from vbap
+  association [1..1] to vbak as _Header on $projection.Vbeln = _Header.vbeln
+{
+  @Analytics.dimension: true
+  key vbeln              as SalesOrder,
+  
+  @Analytics.dimension: true
+  key posnr              as Item,
+  
+  @Analytics.dimension: true
+  _Header.kunnr          as Customer,
+  
+  @Analytics.measure: true
+  @Aggregation.default: #SUM
+  kwmeng                 as Quantity,
+  
+  @Analytics.measure: true
+  @Aggregation.default: #SUM
+  netwr                  as NetAmount
+}
+```
+
+---
+
+## 5. RAP Business Object (S/4HANA 2020+)
+
+### Data Model
+```cds
+define root view entity ZR_TravelTP
+  as select from ztravel
+  composition [0..*] of ZR_BookingTP as _Booking
+{
+  key travel_id     as TravelID,
+      agency_id     as AgencyID,
+      customer_id   as CustomerID,
+      begin_date    as BeginDate,
+      end_date      as EndDate,
+      total_price   as TotalPrice,
+      currency_code as CurrencyCode,
+      status        as Status,
+      _Booking
+}
+```
+
+### Behavior Definition
+```cds
+managed implementation in class zbp_travel_m unique;
+strict ( 2 );
+
+define behavior for ZR_TravelTP alias Travel
+persistent table ztravel
+lock master
+authorization master ( global )
+etag master LastChangedAt
+{
+  create;
+  update;
+  delete;
+  
+  action acceptTravel result [1] $self;
+  action rejectTravel result [1] $self;
+  
+  validation validateDates on save { create; update; }
+  
+  association _Booking { create; }
+}
+```
+
+---
+
+## 6. ACCESS CONTROL (DCL)
+
+```cds
+@EndUserText.label: 'Material Access Control'
+define role ZI_Material {
+  grant select on ZI_Material
+    where (mandt) = aspect pfcg_auth(S_TABU_DIS, DICBERCLS, ACTVT = '03');
+}
+```
+
+---
+
+## 7. COMMON CDS ANNOTATIONS
+
+| Annotation | Purpose |
+|------------|---------|
+| @AbapCatalog.sqlViewName | DDIC view name (required) |
+| @OData.publish: true | Auto-publish as OData service |
+| @UI.lineItem | Show in Fiori list |
+| @UI.selectionField | Add to filter |
+| @UI.facet | Group on Object Page |
+| @Semantics.amount.currencyCode | Link amount to currency |
+| @Semantics.unitOfMeasure | Mark as UoM field |
+| @Analytics.dataCategory: #CUBE | For queries/reports |
+| @AccessControl.authorizationCheck | Auth mode |
