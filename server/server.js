@@ -360,6 +360,15 @@ const HAS_API_KEY = !!(
     !process.env.OPENAI_API_KEY.startsWith('sk-xxx')
 );
 const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+// Model-compatibility knobs. Newer models (gpt-5.5, o-series) reject a custom
+// `temperature` (only the default is allowed) and require `max_completion_tokens`
+// instead of `max_tokens`. OPENAI_TEMPERATURE: a number = use it; empty = omit
+// it; unset = 0.4 (fine for gpt-4o). If a model rejects it at runtime we flip
+// _tempUnsupported so we stop sending it (avoids a failed call every message).
+const OAI_TEMPERATURE = (process.env.OPENAI_TEMPERATURE !== undefined)
+    ? (process.env.OPENAI_TEMPERATURE.trim() === '' ? null : Number(process.env.OPENAI_TEMPERATURE))
+    : 0.4;
+let _tempUnsupported = false;
 let openai = null;
 let OpenAI = null;
 // Optional corporate egress proxy + fail-fast timeout for OpenAI calls.
@@ -4541,17 +4550,27 @@ app.post('/api/chat', requireAuth, chatRateLimiter, async (req, res) => {
         for (let turn = 0; turn < MAX_TOOL_TURNS; turn++) {
             if (clientAborted) break;
             const streamArgs = {
-                model: MODEL, stream: true, max_tokens: 2000, temperature: 0.4,
+                model: MODEL, stream: true, max_completion_tokens: 2000,
                 messages,
                 tools:        chatTools,
                 tool_choice:  'auto',
             };
-            // Phase 17.2.1: auto-fallback to global key on 401 from project key
+            // Only send temperature for models that accept a custom value.
+            if (OAI_TEMPERATURE !== null && !_tempUnsupported) {
+                streamArgs.temperature = OAI_TEMPERATURE;
+            }
+            // Phase 17.2.1: auto-fallback to global key on 401 from project key.
+            // Also auto-drop temperature if the model rejects it (gpt-5.5, o-series).
             let stream;
             try {
                 stream = await oai.chat.completions.create(streamArgs);
             } catch (e) {
-                if ((e?.status === 401) && oai !== openai && openai) {
+                if ((e?.status === 400) && /temperature/i.test(e?.message || '') && ('temperature' in streamArgs)) {
+                    _tempUnsupported = true;                 // remember → stop sending it next time
+                    delete streamArgs.temperature;
+                    console.warn(`[chat] model ${MODEL} rejects custom temperature — retrying without it`);
+                    stream = await oai.chat.completions.create(streamArgs);
+                } else if ((e?.status === 401) && oai !== openai && openai) {
                     await markProjectKeyInvalid(req.session.userId, 'chat stream 401');
                     console.warn('[chat] stream: project key 401 — retrying with global');
                     stream = await openai.chat.completions.create(streamArgs);
