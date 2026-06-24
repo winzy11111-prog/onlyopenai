@@ -340,9 +340,30 @@ const Auth = {
         if (!r) return 'user';
         return String(r).toLowerCase().trim() === 'admin' ? 'admin' : 'user';
     },
+    /** Phase 24: true only while the session-scoped `petabyte_active` marker
+     *  cookie is alive — i.e. the browser hasn't been closed since login. */
+    _hasActiveCookie() {
+        try {
+            return document.cookie.split(';').some(function (c) {
+                return c.trim() === 'petabyte_active=1';
+            });
+        } catch (_) { return false; }
+    },
     getSession() {
         try {
             const s = JSON.parse(localStorage.getItem(this.SESSION_KEY) || 'null');
+            // Phase 24: "close browser = logout". A session in localStorage is
+            // only valid while the marker cookie is alive. If the cookie is gone
+            // (browser was closed) but stale localStorage remains, clear it and
+            // report logged-out so the page guards send the user to login.
+            if (s && !this._hasActiveCookie()) {
+                try {
+                    localStorage.removeItem(this.SESSION_KEY);
+                    localStorage.removeItem(this.TOKEN_KEY);
+                    localStorage.removeItem(this.CSRF_KEY);
+                } catch (_) {}
+                return null;
+            }
             if (s && s.role) s.role = this._normalizeRole(s.role);
             return s;
         } catch { return null; }

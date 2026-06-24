@@ -140,6 +140,10 @@ function normalizeRole(roleDes) {
 // a real "who's logged in" / "logout-all" capability later.
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 const SESSION_COOKIE = 'petabyte_session';
+// Phase 24: readable (non-HttpOnly) session-scoped marker cookie. Lets the
+// frontend tell whether the browser session is still alive. Dies when the
+// browser closes (no maxAge) → drives "close browser = logout".
+const ACTIVE_COOKIE = 'petabyte_active';
 const CSRF_HEADER    = 'x-csrf-token';
 
 async function createSession(user) {
@@ -183,6 +187,12 @@ function _sessionCookieOpts(maxAge) {
         path:     '/',
         ...(maxAge !== undefined ? { maxAge } : {}),
     };
+}
+
+// Phase 24: options for the readable marker cookie — NOT HttpOnly (JS must read
+// it) and NO maxAge (session-scoped: the browser drops it when it closes).
+function _markerCookieOpts() {
+    return { httpOnly: false, sameSite: 'strict', secure: IS_PROD, path: '/' };
 }
 
 async function deleteSession(token) {
@@ -1051,7 +1061,12 @@ app.post('/api/auth/login', loginRateLimiter, validate(schemas.login), async (re
         // Phase 9: createSession returns both session token + per-session CSRF token
         const { token, csrf } = await createSession({ id: u.id, username: u.username, role });
         // Phase 9: HttpOnly cookie. JS cannot read it → safe from XSS theft.
-        res.cookie(SESSION_COOKIE, token, _sessionCookieOpts(SESSION_TTL_MS));
+        // Phase 24: session-scoped (no maxAge) so it dies when the browser closes
+        // ("close browser = logout"). The server session (tbl_session) keeps its
+        // own 24h expiry as a backstop. A readable marker cookie rides alongside
+        // so the frontend knows the browser session is still alive.
+        res.cookie(SESSION_COOKIE, token, _sessionCookieOpts());
+        res.cookie(ACTIVE_COOKIE, '1', _markerCookieOpts());
         res.json({
             ok: true,
             token,                      // Bearer token kept for backward-compat (curl, smoke tests, legacy clients)
@@ -1172,6 +1187,7 @@ app.post('/api/logout', async (req, res) => {
     // Phase 9: clear the HttpOnly cookie too — browsers won't auto-clear it.
     // Options must match what was set (path/sameSite/secure) or some browsers ignore.
     res.clearCookie(SESSION_COOKIE, _sessionCookieOpts());
+    res.clearCookie(ACTIVE_COOKIE, _markerCookieOpts());
     if (userId) {
         try {
             // Phase 16.10: target the exact most-recent login_ok row that
