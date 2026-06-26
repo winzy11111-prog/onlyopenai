@@ -893,10 +893,7 @@
         .chat-area {
             flex: 1;
             overflow-y: auto;
-            /* Center the conversation as a readable column (~820px) like
-               ChatGPT/Claude: horizontal padding grows on wide screens to
-               keep messages centered, clamped to 26px on narrow ones. */
-            padding: 22px max(26px, calc((100% - 820px) / 2));
+            padding: 22px 26px;
             display: flex;
             flex-direction: column;
             gap: 16px;
@@ -961,6 +958,15 @@
 
         @media (prefers-reduced-motion: reduce) {
             .chat-empty-mascot { animation: mascotFade 0.4s ease both; }
+        }
+
+        /* Mascot beside the "PipekAI" label in the chat header (replaces 🧠) */
+        .skill-title { display: inline-flex; align-items: center; gap: 8px; }
+        .header-mascot {
+            width: 26px;
+            height: 26px;
+            object-fit: contain;
+            flex-shrink: 0;
         }
 
         .chat-empty-title {
@@ -1248,9 +1254,7 @@
         /* Input area — Phase 19.8: all surfaces/borders go through tokens
            so dark mode picks up the right colors without spot-fixes. */
         .input-area {
-            /* Match the chat column width so the composer lines up with the
-               conversation above (centered ~820px on wide screens). */
-            padding: 10px max(24px, calc((100% - 820px) / 2)) 16px;
+            padding: 10px 24px 16px;
             border-top: 1px solid var(--pb-border);
             background: var(--pb-surface-0);
             flex-shrink: 0;
@@ -1768,15 +1772,10 @@
 <body>
 
     <aside class="sidebar">
-        <!-- Phase 16.7: replaced "P"-circle avatar with the Petabyte logo image.
-             We keep the .brand-avatar wrapper so legacy CSS sizes/layout still apply,
-             but strip the dark fill + rounded background so the transparent PNG renders cleanly. -->
+        <!-- Sidebar shows the CUSTOMER's project name only. No company logo here
+             on purpose — this header belongs to the client's project, so a
+             PipekAI/Petabyte logo next to it would read wrong. -->
         <div class="sidebar-brand">
-            <div class="brand-avatar" id="brand-avatar"
-                 style="background:transparent;border-radius:0;padding:2px">
-                <img src="/assets/logo-ptb.png" alt="Petabyte"
-                     style="width:100%;height:100%;object-fit:contain"/>
-            </div>
             <div class="brand-project" id="brand-project">PipekAI</div>
         </div>
 
@@ -1850,7 +1849,8 @@
                 </svg>
             </button>
             <div class="skill-title" style="cursor:default;pointer-events:none;user-select:none">
-                <span id="current-skill-name">🧠 PipekAI</span>
+                <img class="header-mascot" src="/assets/mascot.png?v=2" alt="" />
+                <span id="current-skill-name">PipekAI</span>
             </div>
             <div class="user-area" id="user-area">
                 <button class="user-menu-btn" onclick="toggleUserMenu()">
@@ -2686,7 +2686,7 @@
             // don't surface the specific skill name in the chat header any more.
             // (Reverted from skill.emoji + ' ' + skill.name.)
             const el = document.getElementById('current-skill-name');
-            if (el) el.textContent = '🧠 PipekAI';
+            if (el) el.textContent = 'PipekAI';   // emoji replaced by the mascot <img> beside it
         }
 
         // ══════════════════════════════════════════════════════════
