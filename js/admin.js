@@ -2531,8 +2531,8 @@ var admin = {
       var el = document.getElementById(id);
       if (el) el.value = '';
     });
-    var bal = document.getElementById('au-balance');
-    if (bal) bal.value = '100';
+    var cap = document.getElementById('au-dailycap');
+    if (cap) cap.value = '50';   // sensible default daily cap; clear for unlimited
     var hint = document.getElementById('au-pw-hint');
     if (hint) { hint.style.color = '#555'; hint.textContent = 'Must be 8 or more characters and contain at least 1 number (0-9) and 1 upper case letter (A-Z)'; }
     document.getElementById('au-error').textContent = '';
@@ -2569,7 +2569,8 @@ var admin = {
     var firstname = document.getElementById('au-firstname').value.trim();
     var lastname = document.getElementById('au-lastname').value.trim();
     var projectId = document.getElementById('au-project').value;
-    var balance = parseFloat(document.getElementById('au-balance').value) || 100;
+    var capRaw = document.getElementById('au-dailycap').value.trim();
+    var dailyCap = capRaw === '' ? null : parseFloat(capRaw);   // blank = no cap (unlimited)
     var errEl = document.getElementById('au-error');
 
     if (!username) { errEl.textContent = '❌ กรุณากรอก Username'; return; }
@@ -2578,6 +2579,9 @@ var admin = {
     if (!/[A-Z]/.test(password)) { errEl.textContent = '❌ Password ต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว'; return; }
     if (!/[0-9]/.test(password)) { errEl.textContent = '❌ Password ต้องมีตัวเลขอย่างน้อย 1 ตัว'; return; }
     if (password !== confirm) { errEl.textContent = '❌ Password ไม่ตรงกัน'; return; }
+    if (dailyCap !== null && (!isFinite(dailyCap) || dailyCap < 0)) {
+      errEl.textContent = '❌ Daily Cap ต้องเป็นตัวเลข ≥ 0 หรือเว้นว่าง (= ไม่จำกัด)'; return;
+    }
 
     var self = this;
     var displayName = firstname + ' ' + lastname;
@@ -2589,7 +2593,7 @@ var admin = {
     // build the payload conditionally: include projectId only when truthy.
     var payload = {
       username: safeUsername, password: password, displayName: displayName,
-      balance: balance,
+      dailyCap: dailyCap,   // Concept B: per-user daily limit (null = unlimited)
     };
     if (projectId) payload.projectId = projectId;
 

@@ -50,7 +50,10 @@ const createUserSchema = z.object({
     name:        displayStr.optional(),
     surname:     displayStr.optional(),
     role:        roleEnum.optional().default('user'),
-    balance:     amount.optional(),
+    balance:     amount.optional(),                  // legacy (Concept B uses dailyCap)
+    // Concept B: per-user daily spending limit set at creation.
+    // null / omitted = no cap (unlimited, bounded only by the project pool).
+    dailyCap:    z.coerce.number().finite().min(0).max(MAX_BALANCE).nullable().optional(),
     projectId:   projectId.optional(),
 });
 

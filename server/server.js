@@ -1284,6 +1284,12 @@ app.post('/api/users', requireAdmin, validate(schemas.createUser), async (req, r
     const pwErr = validatePasswordStrength(password);
     if (pwErr) return res.status(400).json({ ok: false, error: pwErr });
     const balanceNum = (balance === undefined) ? 0 : balance;
+    // Concept B: per-user daily spending limit. null/'' = no cap (unlimited,
+    // bounded only by the project pool). Validated by createUserSchema.
+    const dailyCap = (req.body.dailyCap === undefined
+                       || req.body.dailyCap === null
+                       || req.body.dailyCap === '')
+        ? null : Number(req.body.dailyCap);
 
     const roleId = (role === 'admin') ? 1 : 2;
     const [name, ...rest] = (displayName || req.body.name || username).split(' ');
@@ -1294,18 +1300,20 @@ app.post('/api/users', requireAdmin, validate(schemas.createUser), async (req, r
         // Phase 8: any password an admin chose for a user is "temporary" —
         // force the user to set their own on first login.
         const r = await pool.query(`
-            INSERT INTO tbl_user (project_id, role_id, username, password, name, surname, created_date, acc_status_id, must_change_password)
-            VALUES ($1,$2,$3,$4,$5,$6,CURRENT_DATE,1,TRUE) RETURNING user_id`,
-            [projId, roleId, username, hash, name, surname]);
+            INSERT INTO tbl_user (project_id, role_id, username, password, name, surname, created_date, acc_status_id, must_change_password, daily_cap)
+            VALUES ($1,$2,$3,$4,$5,$6,CURRENT_DATE,1,TRUE,$7) RETURNING user_id`,
+            [projId, roleId, username, hash, name, surname, dailyCap]);
         const userId = r.rows[0].user_id;
-        await pool.query(`INSERT INTO tbl_credits (user_id, project_id, user_credits) VALUES ($1,$2,$3)
-            ON CONFLICT (user_id) DO UPDATE SET user_credits=$3`,
-            [userId, projId, balanceNum]);
+        // Keep a (legacy) tbl_credits row at 0 — not used for billing under
+        // Concept B, but some joins still expect one row per user.
+        await pool.query(`INSERT INTO tbl_credits (user_id, project_id, user_credits) VALUES ($1,$2,0)
+            ON CONFLICT (user_id) DO NOTHING`,
+            [userId, projId]);
         logAdminAction(req, {
             action: 'create_user',
             targetType: 'user',
             targetId: userId,
-            after: { username, name, surname, role, projectId: projId, balance: balanceNum },
+            after: { username, name, surname, role, projectId: projId, daily_cap: dailyCap },
         });
         res.json({ ok: true, id: userId });
     } catch (e) {

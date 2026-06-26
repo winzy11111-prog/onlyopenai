@@ -1884,10 +1884,15 @@
                 </div>
             </div>
 
-            <!-- Credit -->
+            <!-- Daily Cap (Concept B) — per-user daily spending limit drawn from
+                 the project pool. Leave blank = no cap (unlimited / pool only). -->
             <div class="modal-field">
-                <label class="modal-label" data-i18n="m.field.startCredit">Credit เริ่มต้น (฿)</label>
-                <input class="modal-input" id="au-balance" type="number" step="0.01" min="0" value="100" />
+                <label class="modal-label" data-i18n="m.field.startDailyCap">Daily Cap เริ่มต้น (฿/วัน)</label>
+                <input class="modal-input" id="au-dailycap" type="number" step="0.01" min="0"
+                       placeholder="เช่น 50 — เว้นว่าง = ไม่จำกัด" value="50" />
+                <div style="font-size:.72rem;color:var(--text-3);margin-top:6px">
+                    ลิมิตการใช้ต่อวันของ user (หักจาก pool ของ project) · เว้นว่าง = ไม่จำกัด · ปรับภายหลังได้ที่หน้า Cap Management
+                </div>
             </div>
 
             <div class="modal-error" id="au-error"></div>
@@ -2543,11 +2548,11 @@
         </div>
     </div>
 
-    <script src="js/i18n.js?v=phase22"></script>
+    <script src="js/i18n.js?v=phase22c"></script>
     <script src="js/config.js?v=phase9-1"></script>
     <script src="js/auth.js?v=phase24"></script>
     <script src="js/pricing.js?v=pipek"></script>
-    <script src="js/admin.js?v=phase22b"></script>
+    <script src="js/admin.js?v=phase22c"></script>
 </body>
 
 </html>
