@@ -649,7 +649,7 @@ const PHASE4_TOOLS = [
 // ── Phase 2: OpenAI Assistant (auto-create/load) ───────────
 let ASSISTANT_ID = process.env.OPENAI_ASSISTANT_ID || null;
 
-const ASSISTANT_INSTRUCTIONS = `You are PetabyteAi, an Expert SAP/ABAP AI Assistant for the SAP S/4HANA system.
+const ASSISTANT_INSTRUCTIONS = `You are PipekAI, an Expert SAP/ABAP AI Assistant for the SAP S/4HANA system.
 You have memory of the entire conversation in this thread — use it to give contextual, accurate answers.
 
 ## Your capabilities:
@@ -4281,7 +4281,7 @@ const INTENT_SKILL_MAP = {
     basis:         { skillId: 'basis-admin',          label: '🔐 Basis / Auth Helper'      },
     integration:   { skillId: 'sap-integration',      label: '🔗 Integration Architect'    },
     functional:    { skillId: 'sap-functional',       label: '🔧 Functional Config Helper' },
-    general:       { skillId: 'auto',                 label: '🧠 PetabyteAi'               },
+    general:       { skillId: 'auto',                 label: '🧠 PipekAI'               },
 };
 
 // Router prompt — เบา เร็ว ใช้ gpt-4o-mini เสมอ

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PetabyteAi — AI Assistant</title>
+    <title>PipekAI — AI Assistant</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
         rel="stylesheet" />
@@ -893,7 +893,10 @@
         .chat-area {
             flex: 1;
             overflow-y: auto;
-            padding: 22px 26px;
+            /* Center the conversation as a readable column (~820px) like
+               ChatGPT/Claude: horizontal padding grows on wide screens to
+               keep messages centered, clamped to 26px on narrow ones. */
+            padding: 22px max(26px, calc((100% - 820px) / 2));
             display: flex;
             flex-direction: column;
             gap: 16px;
@@ -929,6 +932,15 @@
             filter: drop-shadow(0 2px 8px rgba(74, 123, 214, 0.20));
             margin-bottom: 4px;
             line-height: 1;
+        }
+
+        /* PipekAI mascot on the welcome screen */
+        .chat-empty-mascot {
+            width: 168px;
+            max-width: 56%;
+            height: auto;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 8px 20px rgba(74, 123, 214, 0.22));
         }
 
         .chat-empty-title {
@@ -1216,7 +1228,9 @@
         /* Input area — Phase 19.8: all surfaces/borders go through tokens
            so dark mode picks up the right colors without spot-fixes. */
         .input-area {
-            padding: 10px 24px 16px;
+            /* Match the chat column width so the composer lines up with the
+               conversation above (centered ~820px on wide screens). */
+            padding: 10px max(24px, calc((100% - 820px) / 2)) 16px;
             border-top: 1px solid var(--pb-border);
             background: var(--pb-surface-0);
             flex-shrink: 0;
@@ -1275,7 +1289,7 @@
 
         .input-row {
             display: flex;
-            align-items: flex-end;
+            align-items: center;
             gap: 10px;
             background: var(--pb-surface-1);
             border: 1.5px solid var(--pb-border-strong);
@@ -1740,10 +1754,10 @@
         <div class="sidebar-brand">
             <div class="brand-avatar" id="brand-avatar"
                  style="background:transparent;border-radius:0;padding:2px">
-                <img src="/assets/petabyte2_nobg.png" alt="Petabyte"
+                <img src="/assets/logo-ptb.png" alt="Petabyte"
                      style="width:100%;height:100%;object-fit:contain"/>
             </div>
-            <div class="brand-project" id="brand-project">PetabyteAi</div>
+            <div class="brand-project" id="brand-project">PipekAI</div>
         </div>
 
         <button class="new-chat-btn" onclick="newChat()">
@@ -1816,7 +1830,7 @@
                 </svg>
             </button>
             <div class="skill-title" style="cursor:default;pointer-events:none;user-select:none">
-                <span id="current-skill-name">🧠 PetabyteAi</span>
+                <span id="current-skill-name">🧠 PipekAI</span>
             </div>
             <div class="user-area" id="user-area">
                 <button class="user-menu-btn" onclick="toggleUserMenu()">
@@ -1833,8 +1847,8 @@
 
         <div class="chat-area" id="chat-area">
             <div class="chat-empty" id="chat-empty">
-                <div class="chat-empty-icon">🤖</div>
-                <div class="chat-empty-title">สวัสดี! PetabyteAi พร้อมช่วยแล้ว</div>
+                <img class="chat-empty-mascot" src="/assets/mascot.png" alt="PipekAI" />
+                <div class="chat-empty-title">สวัสดี! PipekAI พร้อมช่วยแล้ว</div>
                 <div class="chat-empty-sub">ถามอะไรเกี่ยวกับ SAP / ABAP ก็ได้ — วาง code, error message, หรือถามทั่วไป แล้ว AI จะวิเคราะห์ให้อัตโนมัติ</div>
             </div>
         </div>
@@ -1945,7 +1959,7 @@
     <script src="js/md.js?v=ux-1"></script>
     <script src="js/config.js?v=phase9-1"></script>
     <script src="js/auth.js?v=phase24"></script>
-    <script src="js/pricing.js"></script>
+    <script src="js/pricing.js?v=pipek"></script>
     <script src="js/mock-ai.js"></script>
     <script src="js/ai-client.js?v=phase21-10"></script>
     <script>
@@ -2188,8 +2202,8 @@
             // Phase 19.2: welcoming empty state on new chat.
             area.innerHTML = `
         <div class="chat-empty" id="chat-empty">
-            <div class="chat-empty-icon">🤖</div>
-            <div class="chat-empty-title">สวัสดี! PetabyteAi พร้อมช่วยแล้ว</div>
+            <img class="chat-empty-mascot" src="/assets/mascot.png" alt="PipekAI" />
+            <div class="chat-empty-title">สวัสดี! PipekAI พร้อมช่วยแล้ว</div>
             <div class="chat-empty-sub">ถามอะไรเกี่ยวกับ SAP / ABAP ก็ได้ — วาง code, error message, หรือถามทั่วไป แล้ว AI จะวิเคราะห์ให้อัตโนมัติ</div>
         </div>`;
             renderSessionList();
@@ -2652,7 +2666,7 @@
             // don't surface the specific skill name in the chat header any more.
             // (Reverted from skill.emoji + ' ' + skill.name.)
             const el = document.getElementById('current-skill-name');
-            if (el) el.textContent = '🧠 PetabyteAi';
+            if (el) el.textContent = '🧠 PipekAI';
         }
 
         // ══════════════════════════════════════════════════════════

@@ -4,13 +4,30 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PetabyteAi — Login</title>
+    <title>PipekAI — Login</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap"
         rel="stylesheet" />
     <style>
+        /* ───────────────────────────────────────────────────────────
+           Pastel theme derived from the Petabyte logo palette:
+             --logo-light  #4691DA   bright azure (T + B front face)
+             --logo-mid    #2E6CB0   mid blue     (wordmark)
+             --logo-navy   #143A66   deep navy    (B depth/shadow)
+           Light, airy background; white frosted card; blue accents.
+           ─────────────────────────────────────────────────────────── */
+        :root {
+            --logo-light: #4691da;
+            --logo-mid:   #2e6cb0;
+            --logo-navy:  #143a66;
+            --ink:        #1e3a5f;   /* primary text  */
+            --ink-2:      #4a5f7a;   /* secondary     */
+            --ink-3:      #8499b4;   /* muted/labels  */
+            --line:       rgba(70, 145, 218, 0.18);
+        }
+
         *,
         *::before,
         *::after {
@@ -21,8 +38,10 @@
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #080808;
-            color: #f0f0f0;
+            background:
+                radial-gradient(1100px 600px at 50% -10%, #ffffff 0%, rgba(255, 255, 255, 0) 60%),
+                linear-gradient(160deg, #eaf3fe 0%, #dcebfb 46%, #f4f9ff 100%);
+            color: var(--ink);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -31,28 +50,30 @@
             overflow: hidden;
         }
 
-        /* Background grid */
+        /* Soft blue grid */
         body::before {
             content: '';
             position: fixed;
             inset: 0;
             background-image:
-                linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+                linear-gradient(rgba(70, 145, 218, 0.055) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(70, 145, 218, 0.055) 1px, transparent 1px);
             background-size: 48px 48px;
+            mask-image: radial-gradient(circle at 50% 40%, #000 0%, transparent 75%);
+            -webkit-mask-image: radial-gradient(circle at 50% 40%, #000 0%, transparent 75%);
             pointer-events: none;
         }
 
-        /* Ambient glow */
+        /* Ambient blue glow */
         body::after {
             content: '';
             position: fixed;
-            top: -200px;
+            top: -220px;
             left: 50%;
             transform: translateX(-50%);
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
+            width: 640px;
+            height: 640px;
+            background: radial-gradient(circle, rgba(70, 145, 218, 0.18) 0%, transparent 70%);
             pointer-events: none;
         }
 
@@ -67,78 +88,56 @@
         /* Brand */
         .brand {
             text-align: center;
-            margin-bottom: 36px;
+            margin-bottom: 30px;
         }
 
         .brand-logo {
-            width: 52px;
-            height: 52px;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 14px;
+            width: 176px;
+            max-width: 64%;
+            margin: 0 auto 16px;
+            background: #ffffff;
+            border: 1px solid rgba(70, 145, 218, 0.14);
+            border-radius: 24px;
+            padding: 16px 20px;
+            box-shadow:
+                0 14px 34px rgba(46, 108, 176, 0.18),
+                0 2px 6px rgba(46, 108, 176, 0.08);
+        }
+
+        .brand-logo img {
+            width: 100%;
+            height: auto;
+            display: block;
         }
 
         .brand-name {
-            font-size: 1.5rem;
+            font-size: 1.55rem;
             font-weight: 800;
             letter-spacing: -0.03em;
-            background: linear-gradient(135deg, #fff, #888);
+            background: linear-gradient(135deg, var(--logo-light), var(--logo-mid));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
         .brand-sub {
-            font-size: 0.82rem;
-            color: #555;
-            margin-top: 4px;
+            font-size: 0.86rem;
+            font-weight: 500;
+            color: var(--ink-3);
+            margin-top: 6px;
         }
 
         /* Card */
         .login-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.09);
-            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow:
+                0 20px 56px rgba(46, 108, 176, 0.16),
+                0 2px 0 rgba(255, 255, 255, 0.7) inset;
+            border-radius: 22px;
             padding: 32px;
-            backdrop-filter: blur(12px);
-        }
-
-        /* Role tabs */
-        .role-tabs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 28px;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 10px;
-            padding: 4px;
-        }
-
-        .role-tab {
-            padding: 9px;
-            border-radius: 8px;
-            border: none;
-            background: none;
-            color: #666;
-            font-size: 0.875rem;
-            font-weight: 600;
-            font-family: 'Inter', sans-serif;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 7px;
-        }
-
-        .role-tab.active {
-            background: rgba(255, 255, 255, 0.09);
-            color: #f0f0f0;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
         }
 
         /* Form */
@@ -149,8 +148,8 @@
         .form-label {
             display: block;
             font-size: 0.775rem;
-            font-weight: 600;
-            color: #666;
+            font-weight: 700;
+            color: var(--ink-2);
             text-transform: uppercase;
             letter-spacing: 0.06em;
             margin-bottom: 8px;
@@ -158,81 +157,69 @@
 
         .form-input {
             width: 100%;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            color: #f0f0f0;
+            background: #ffffff;
+            border: 1px solid rgba(70, 145, 218, 0.22);
+            border-radius: 11px;
+            color: var(--ink);
             font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
+            font-size: 0.92rem;
             padding: 12px 14px;
             transition: border-color 0.2s, box-shadow 0.2s;
         }
 
         .form-input:focus {
             outline: none;
-            border-color: rgba(255, 255, 255, 0.35);
-            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.04);
+            border-color: var(--logo-light);
+            box-shadow: 0 0 0 4px rgba(70, 145, 218, 0.15);
         }
 
         .form-input::placeholder {
-            color: #444;
-        }
-
-        /* Demo hint */
-        .demo-hint {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            padding: 10px 14px;
-            margin-bottom: 20px;
-            font-size: 0.78rem;
-            color: #666;
-            font-family: 'JetBrains Mono', monospace;
-            line-height: 1.7;
-        }
-
-        .demo-hint strong {
-            color: var(--text-2);
+            color: #aebfd6;
         }
 
         /* Submit */
         .btn-login {
             width: 100%;
             padding: 13px;
-            background: linear-gradient(135deg, #fff, #aaa);
-            color: #080808;
+            background: linear-gradient(135deg, var(--logo-light) 0%, var(--logo-mid) 100%);
+            color: #ffffff;
             border: none;
-            border-radius: 10px;
-            font-size: 0.9rem;
+            border-radius: 11px;
+            font-size: 0.95rem;
             font-weight: 700;
             font-family: 'Inter', sans-serif;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
             letter-spacing: 0.01em;
+            box-shadow: 0 10px 22px rgba(46, 108, 176, 0.28);
+            margin-top: 4px;
         }
 
         .btn-login:hover {
             transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.1);
+            box-shadow: 0 14px 28px rgba(46, 108, 176, 0.36);
+            filter: saturate(1.05);
         }
 
         .btn-login:active {
             transform: translateY(0);
+            box-shadow: 0 6px 16px rgba(46, 108, 176, 0.28);
         }
 
         .btn-login:disabled {
-            opacity: 0.5;
+            opacity: 0.6;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
 
         /* Error */
         .error-msg {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.25);
-            color: #fca5a5;
+            background: rgba(220, 53, 69, 0.08);
+            border: 1px solid rgba(220, 53, 69, 0.28);
+            color: #c0392b;
             padding: 10px 14px;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 0.82rem;
             margin-bottom: 16px;
             display: none;
@@ -245,25 +232,23 @@
         /* Footer */
         .login-footer {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 22px;
             font-size: 0.75rem;
-            color: #333;
+            color: var(--ink-3);
         }
     </style>
 </head>
 
 <body>
     <div class="login-wrap">
-        <!-- Phase 16.7: real Petabyte logo. The brand-logo box is sized by
-             existing CSS; only the inner element changes. We bump the slot
-             slightly so the logo with wordmark reads at this entry-page scale. -->
+        <!-- Brand: full Petabyte logo (TB monogram + wordmark) on a white
+             rounded badge so it reads cleanly over the pastel background. -->
         <div class="brand">
-            <div class="brand-logo" style="width:64px;height:64px">
-                <img src="/assets/petabyte2_nobg.png" alt="Petabyte"
-                     style="width:100%;height:100%;object-fit:contain"/>
+            <div class="brand-logo">
+                <img src="/assets/logo-ptb.png" alt="Petabyte" />
             </div>
-            <div class="brand-name">PetabyteAi</div>
-            <div class="brand-sub">AI Coding Assistant for SAP/ABAP</div>
+            <div class="brand-name">PipekAI</div>
+            <div class="brand-sub">AI Coding Assistant for SAP / ABAP</div>
         </div>
 
         <div class="login-card">
@@ -293,7 +278,7 @@
         </div>
 
         <div class="login-footer">
-            PetabyteAi — Demo Platform &nbsp;|&nbsp; 2026
+            PipekAI &nbsp;|&nbsp; 2026
         </div>
     </div>
 

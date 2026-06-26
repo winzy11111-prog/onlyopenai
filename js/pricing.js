@@ -72,13 +72,13 @@ const PRICING = {
   skills: [
     {
       id: 'auto',
-      name: 'PetabyteAi',
+      name: 'PipekAI',
       emoji: '🧠',
       desc: 'AI วิเคราะห์คำถามและตอบได้ทันที — ไม่ต้องเลือก skill เอง',
-      tags: ['PetabyteAi', 'SAP', 'ABAP', 'Auto'],
+      tags: ['PipekAI', 'SAP', 'ABAP', 'Auto'],
       type: 'advanced',
       avgOutputTokens: 420,
-      systemPrompt: `You are an Expert SAP/ABAP AI Assistant for the SAP S/4HANA system. You automatically detect what the user needs and respond accordingly.
+      systemPrompt: `You are PipekAI, an Expert SAP/ABAP AI Assistant for the SAP S/4HANA system. You automatically detect what the user needs and respond accordingly.
 
 ## Your capabilities:
 - **ABAP Code Generation**: Generate ABAP reports, classes, function modules, BAPI calls, SELECT statements
